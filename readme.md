@@ -4,7 +4,7 @@
 [![Maven](https://img.shields.io/badge/Maven-3.9+-blue.svg)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-一个功能完整的高级科学计算器，模仿卡西欧 fx-991CN X 计算器，使用 Java 25 和 Swing 实现。
+一个功能完整的高级科学计算器，模仿卡西欧 fx-991CN X 计算器，使用 Java 25 和 Swing 实现。由于本人比较废物，代码可能有大量bug，也可能不适配，请见谅
 
 ![Calculator Preview](https://via.placeholder.com/800x600/2d2d2d/ffffff?text=CASIO+fx-991CN+X)
 
