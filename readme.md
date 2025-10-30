@@ -570,9 +570,8 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ## 👥 作者
 
-- **开发者**: Your Name
-- **邮箱**: your.email@example.com
-- **GitHub**: [@yourusername](https://github.com/yourusername)
+- **开发者**: DY C
+- **邮箱**: 3634043412@qq.com
 
 ---
 
