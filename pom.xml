@@ -4,49 +4,66 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.calculator</groupId>
     <artifactId>casio-calculator</artifactId>
     <version>1.0.0</version>
-    
+    <packaging>jar</packaging>
+
+    <name>Casio Calculator</name>
+    <description>A scientific calculator inspired by Casio fx-991CN X</description>
+
     <properties>
+        <!-- Java 版本 -->
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.release>25</maven.compiler.release>
+
+        <!-- 编码设置 - 确保所有环节使用 UTF-8 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+
+        <!-- 依赖版本管理 -->
+        <exp4j.version>0.4.8</exp4j.version>
+        <ejml.version>0.43.1</ejml.version>
+        <jfreechart.version>1.5.4</jfreechart.version>
+        <commons-math3.version>3.6.1</commons-math3.version>
     </properties>
-    
+
     <dependencies>
-        <!-- 数学表达式解析 -->
+        <!-- 数学表达式解析库 -->
         <dependency>
             <groupId>net.objecthunter</groupId>
             <artifactId>exp4j</artifactId>
-            <version>0.4.8</version>
+            <version>${exp4j.version}</version>
         </dependency>
-        
-        <!-- 矩阵运算 -->
+
+        <!-- 矩阵运算库 EJML -->
         <dependency>
             <groupId>org.ejml</groupId>
             <artifactId>ejml-all</artifactId>
-            <version>0.43.1</version>
+            <version>${ejml.version}</version>
         </dependency>
-        
-        <!-- 图表绘制 -->
+
+        <!-- 图表绘制库 JFreeChart -->
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
-            <version>1.5.4</version>
+            <version>${jfreechart.version}</version>
         </dependency>
-        
-        <!-- 数值计算 -->
+
+        <!-- 数值计算库 Apache Commons Math -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.6.1</version>
+            <version>${commons-math3.version}</version>
         </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
+            <!-- Java 编译器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -54,18 +71,81 @@
                 <configuration>
                     <source>25</source>
                     <target>25</target>
-                    <!-- Ensure Java source files are compiled using UTF-8 -->
+                    <release>25</release>
                     <encoding>UTF-8</encoding>
+                    <!-- 显示编译警告 -->
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
-            <!-- Ensure resources are filtered/processed using UTF-8 to avoid encoding issues -->
+
+            <!-- 资源文件处理插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.4</version>
+                <version>3.3.1</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                 </configuration>
+            </plugin>
+
+            <!-- 执行插件 - 用于运行主类 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <mainClass>com.calculator.CasioCalculator</mainClass>
+                    <!-- 设置 JVM 参数 -->
+                    <arguments>
+                        <argument>-Dfile.encoding=UTF-8</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+
+            <!-- JAR 打包插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <!-- 添加主类到 MANIFEST.MF -->
+                            <mainClass>com.calculator.CasioCalculator</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                        <manifestEntries>
+                            <Built-By>Calculator Team</Built-By>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- Shade 插件 - 打包可执行 JAR（包含所有依赖） -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.calculator.CasioCalculator</mainClass>
+                                </transformer>
+                            </transformers>
+                            <!-- 生成的文件名 -->
+                            <finalName>casio-calculator-standalone</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
