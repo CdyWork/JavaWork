@@ -4,158 +4,145 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * CasioCalculator - 增强版 UI
+ *
+ * 特性：
+ *  - 动态矩阵输入：用户可指定行列数（NxM）生成 JTextField 网格；
+ *    支持从网格读取矩阵或直接粘贴多行文本解析矩阵字符串（parseMatrixFromString）。
+ *  - 方程面板：多行输入，支持分号或换行分隔方程组，自动识别并求解多元线性方程组或单方程。
+ *  - 增强函数绘图：支持复合函数快捷输入和常用函数模板
+ *  - 保留普通计算、函数绘图模块（调用 CalculatorEngine 与 GraphPlotter）。
+ *
+ * 注意：需要与增强版 CalculatorEngine 和 GraphPlotter 一并使用。
+ */
 public class CasioCalculator extends JFrame {
 
-    // ⭐ 静态初始化块 - 在类加载时立即执行，设置中文字体
     static {
         setupWindowsChineseFont();
     }
 
+    private final CalculatorEngine engine;
+
+    // 显示与状态
     private JTextArea display;
-    private JTabbedPane tabbedPane;
-    private CalculatorEngine engine;
     private JLabel statusLabel;
-    private JTextField[][] matrixAFields;
-    private JTextField[][] matrixBFields;
+
+    // 动态矩阵 A/B 的容器（使用 List 以支持动态大小）
+    private JPanel matrixAContainer;
+    private JPanel matrixBContainer;
+    private List<List<JTextField>> matrixAFields = new ArrayList<>();
+    private List<List<JTextField>> matrixBFields = new ArrayList<>();
+    private JTextField matrixARowsField;
+    private JTextField matrixAColsField;
+    private JTextField matrixBRowsField;
+    private JTextField matrixBColsField;
+    private JTextArea matrixATextArea; // 支持粘贴文本解析矩阵
+    private JTextArea matrixBTextArea;
+
+    // 方程组输入（多行）
+    private JTextArea equationsTextArea;
 
     public CasioCalculator() {
+        super("Calculator by CDY - Dynamic Matrix & Multivariate Solver");
         engine = new CalculatorEngine();
-        matrixAFields = new JTextField[3][3];
-        matrixBFields = new JTextField[3][3];
         initializeUI();
     }
 
-    /**
-     * 设置 Windows 系统中文字体（关键修复）
-     */
     private static void setupWindowsChineseFont() {
         try {
-            // 设置系统编码为 UTF-8
-            System.setProperty("file.encoding", "UTF-8");
-
-            // Windows 推荐字体
-            String fontName = "Microsoft YaHei UI";  // 微软雅黑 UI
-
-            // 创建字体对象
+            // 不尝试在运行时修改 JVM file.encoding（不会生效），仅设置 Swing 字体
+            String fontName = "Microsoft YaHei UI";
             Font plainFont = new Font(fontName, Font.PLAIN, 13);
             Font boldFont = new Font(fontName, Font.BOLD, 14);
-            Font buttonFont = new Font(fontName, Font.BOLD, 13);
+            Font displayFont = new Font("Consolas", Font.BOLD, 20);
 
-            // ⭐ 特别设置：显示屏使用支持中文的等宽字体
-            // 创建字体映射，让 TextArea 使用 Consolas 显示数字，但后备字体用微软雅黑显示中文
-            Font textAreaFont = new Font("Consolas", Font.BOLD, 20);
-
-            // 设置所有 Swing 组件的默认字体
-            UIManager.put("Button.font", buttonFont);
+            UIManager.put("Button.font", plainFont);
             UIManager.put("Label.font", plainFont);
             UIManager.put("TextField.font", plainFont);
-            UIManager.put("TextArea.font", textAreaFont);  // 显示屏字体
+            UIManager.put("TextArea.font", displayFont);
             UIManager.put("TabbedPane.font", boldFont);
             UIManager.put("TitledBorder.font", boldFont);
-            UIManager.put("Menu.font", plainFont);
-            UIManager.put("MenuItem.font", plainFont);
-            UIManager.put("PopupMenu.font", plainFont);
-            UIManager.put("ToolTip.font", plainFont);
-            UIManager.put("Table.font", plainFont);
-            UIManager.put("TableHeader.font", boldFont);
-            UIManager.put("ComboBox.font", plainFont);
-            UIManager.put("List.font", plainFont);
-            UIManager.put("Panel.font", plainFont);
-            UIManager.put("CheckBox.font", plainFont);
-            UIManager.put("RadioButton.font", plainFont);
 
-            System.out.println("✓ Windows 中文字体设置成功: " + fontName);
-            System.out.println("✓ 显示屏字体: Consolas (数字) + " + fontName + " (中文)");
-            System.out.println("✓ 文件编码: " + System.getProperty("file.encoding"));
-
+            System.out.println("Fonts set: " + fontName);
         } catch (Exception e) {
-            System.err.println("✗ 字体设置失败: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void initializeUI() {
-        setTitle("Calculator  by CDY");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 750);
+        setSize(1100, 820);
         setLocationRelativeTo(null);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBackground(new Color(40, 40, 40));
-        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        JPanel main = new JPanel(new BorderLayout(12, 12));
+        main.setBorder(new EmptyBorder(12, 12, 12, 12));
+        main.setBackground(new Color(36, 36, 36));
 
-        mainPanel.add(createTopBar(), BorderLayout.NORTH);
-        mainPanel.add(createDisplay(), BorderLayout.CENTER);
+        main.add(createTopBar(), BorderLayout.NORTH);
+        main.add(createDisplayPane(), BorderLayout.CENTER);
 
-        tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 14));
-        tabbedPane.addTab("普通计算", createNormalPanel());
-        tabbedPane.addTab("矩阵运算", createMatrixPanel());
-        tabbedPane.addTab("方程求解", createEquationPanel());
-        tabbedPane.addTab("函数绘图", createGraphPanel());
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("普通计算", createNormalPanel());
+        tabs.addTab("矩阵运算 (动态大小)", createMatrixPanel());
+        tabs.addTab("方程求解", createEquationPanel());
+        tabs.addTab("函数绘图", createGraphPanel());
 
-        mainPanel.add(tabbedPane, BorderLayout.SOUTH);
-        add(mainPanel);
+        main.add(tabs, BorderLayout.SOUTH);
+
+        setContentPane(main);
     }
 
     private JPanel createTopBar() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(20, 50, 100));
-        panel.setBorder(new EmptyBorder(12, 20, 12, 20));
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(new Color(18, 80, 140));
+        p.setBorder(new EmptyBorder(8, 12, 8, 12));
 
-        JLabel brand = new JLabel("demo-test");
-        brand.setFont(new Font("Arial", Font.BOLD, 20));
-        brand.setForeground(Color.WHITE);
+        JLabel title = new JLabel("CDY Calculator");
+        title.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 20));
+        title.setForeground(Color.WHITE);
 
         statusLabel = new JLabel("DEG | M: 0");
         statusLabel.setFont(new Font("Consolas", Font.PLAIN, 12));
-        statusLabel.setForeground(new Color(150, 200, 255));
+        statusLabel.setForeground(new Color(200, 230, 255));
 
-        panel.add(brand, BorderLayout.WEST);
-        panel.add(statusLabel, BorderLayout.EAST);
-
-        return panel;
+        p.add(title, BorderLayout.WEST);
+        p.add(statusLabel, BorderLayout.EAST);
+        return p;
     }
 
-    private JScrollPane createDisplay() {
-        display = new JTextArea(4, 40);
-
-        // ⭐ 关键修复：创建复合字体 - Consolas 显示数字，微软雅黑显示中文
-        // 方案1：使用字体后备机制（推荐）
-        Font displayFont = createDisplayFont();
-        display.setFont(displayFont);
-
-        display.setBackground(new Color(180, 255, 180));
-        display.setForeground(new Color(0, 60, 0));
-        display.setEditable(true);
+    private JScrollPane createDisplayPane() {
+        display = new JTextArea(4, 60);
         display.setText("0");
+        display.setEditable(true);
         display.setLineWrap(true);
-        display.setMargin(new Insets(10, 15, 10, 15));
+        display.setWrapStyleWord(true);
+        display.setMargin(new Insets(8, 12, 8, 12));
+        display.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 20));
+        display.setBackground(new Color(230, 250, 230));
+        display.setForeground(new Color(10, 50, 10));
 
-        JScrollPane scrollPane = new JScrollPane(display);
-        scrollPane.setBorder(new LineBorder(new Color(0, 100, 0), 4));
-
-        return scrollPane;
+        JScrollPane sp = new JScrollPane(display);
+        sp.setBorder(new LineBorder(new Color(0, 120, 0), 4));
+        sp.setPreferredSize(new Dimension(1000, 120));
+        return sp;
     }
 
-    /**
-     * 创建显示屏字体 - 支持数字和中文
-     */
-    private Font createDisplayFont() {
-        // 方案1：直接使用微软雅黑（简单有效）
-        // 微软雅黑也能很好地显示数字，只是不是等宽字体
-        return new Font("Microsoft YaHei UI", Font.BOLD, 20);
-
-    }
-
+    /* ------------------ 普通计算面板 ------------------ */
     private JPanel createNormalPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setBackground(new Color(40, 40, 40));
-        panel.setBorder(new EmptyBorder(12, 12, 12, 12));
+        panel.setPreferredSize(new Dimension(1000, 360));
+        panel.setBackground(new Color(36, 36, 36));
+        panel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        JPanel buttonsPanel = new JPanel(new GridLayout(8, 5, 6, 6));
-        buttonsPanel.setBackground(new Color(40, 40, 40));
+        JPanel center = new JPanel(new BorderLayout(6, 6));
+        center.setBackground(new Color(36, 36, 36));
+
+        JPanel buttons = new JPanel(new GridLayout(8, 5, 6, 6));
+        buttons.setBackground(new Color(36, 36, 36));
 
         String[][] allButtons = {
                 {"sin", "cos", "tan", "√", "x²"},
@@ -169,358 +156,512 @@ public class CasioCalculator extends JFrame {
         };
 
         for (String[] row : allButtons) {
-            for (String text : row) {
-                ButtonType type = determineButtonType(text);
-                buttonsPanel.add(createStyledButton(text, type));
+            for (String t : row) {
+                buttons.add(createStyledButton(t));
             }
         }
 
-        panel.add(buttonsPanel, BorderLayout.CENTER);
+        center.add(buttons, BorderLayout.CENTER);
 
-        JPanel memoryPanel = new JPanel(new GridLayout(1, 5, 6, 6));
-        memoryPanel.setBackground(new Color(40, 40, 40));
-        String[] memButtons = {"MC", "MR", "M+", "M-", "MS"};
-        for (String text : memButtons) {
-            memoryPanel.add(createStyledButton(text, ButtonType.MEMORY));
-        }
-        panel.add(memoryPanel, BorderLayout.SOUTH);
+        JPanel memPanel = new JPanel(new GridLayout(1, 5, 6, 6));
+        memPanel.setBackground(new Color(36, 36, 36));
+        String[] mems = {"MC", "MR", "M+", "M-", "MS"};
+        for (String m : mems) memPanel.add(createStyledButton(m));
+        center.add(memPanel, BorderLayout.SOUTH);
 
+        panel.add(center, BorderLayout.CENTER);
         return panel;
     }
 
-    private ButtonType determineButtonType(String text) {
-        if (text.matches("[0-9.]")) {
-            return ButtonType.NUMBER;
-        }
-        if (text.equals("=")) {
-            return ButtonType.EQUALS;
-        }
-        if ("+-×÷%".contains(text)) {
-            return ButtonType.OPERATOR;
-        }
-        if (text.equals("AC") || text.equals("DEL")) {
-            return ButtonType.SPECIAL;
-        }
-        return ButtonType.FUNCTION;
-    }
-
-    private JPanel createMatrixPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBackground(new Color(40, 40, 40));
-        panel.setBorder(new EmptyBorder(12, 12, 12, 12));
-
-        JPanel matricesPanel = new JPanel(new GridLayout(1, 2, 15, 0));
-        matricesPanel.setBackground(new Color(40, 40, 40));
-
-        matricesPanel.add(createMatrixInput("矩阵 A", matrixAFields));
-        matricesPanel.add(createMatrixInput("矩阵 B", matrixBFields));
-
-        JPanel opsPanel = new JPanel(new GridLayout(2, 3, 6, 6));
-        opsPanel.setBackground(new Color(40, 40, 40));
-        opsPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
-
-        String[] operations = {"A + B", "A - B", "A × B", "det(A)", "A⁻¹", "Aᵀ"};
-
-        for (String op : operations) {
-            JButton btn = createStyledButton(op, ButtonType.OPERATOR);
-            btn.addActionListener(e -> performMatrixOperation(op));
-            opsPanel.add(btn);
-        }
-
-        panel.add(matricesPanel, BorderLayout.CENTER);
-        panel.add(opsPanel, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    private JPanel createMatrixInput(String title, JTextField[][] fields) {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setBackground(new Color(55, 55, 55));
-        panel.setBorder(new TitledBorder(
-                new LineBorder(Color.GRAY, 2),
-                title,
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                new Font("Microsoft YaHei UI", Font.BOLD, 14),
-                Color.WHITE
-        ));
-
-        JPanel gridPanel = new JPanel(new GridLayout(3, 3, 6, 6));
-        gridPanel.setBackground(new Color(55, 55, 55));
-        gridPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                fields[i][j] = new JTextField("0");
-                fields[i][j].setFont(new Font("Consolas", Font.BOLD, 16));
-                fields[i][j].setHorizontalAlignment(JTextField.CENTER);
-                fields[i][j].setBackground(new Color(70, 70, 70));
-                fields[i][j].setForeground(Color.WHITE);
-                fields[i][j].setCaretColor(Color.WHITE);
-                gridPanel.add(fields[i][j]);
-            }
-        }
-
-        panel.add(gridPanel, BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel createEquationPanel() {
-        JPanel panel = new JPanel(new BorderLayout(12, 12));
-        panel.setBackground(new Color(40, 40, 40));
-        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-        JPanel inputPanel = new JPanel(new BorderLayout(8, 8));
-        inputPanel.setBackground(new Color(55, 55, 55));
-        inputPanel.setBorder(new TitledBorder(
-                new LineBorder(Color.GRAY, 2),
-                "输入方程",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                new Font("Microsoft YaHei UI", Font.BOLD, 14),
-                Color.WHITE
-        ));
-        inputPanel.setBorder(BorderFactory.createCompoundBorder(
-                inputPanel.getBorder(),
-                new EmptyBorder(15, 15, 15, 15)
-        ));
-
-        JTextField equationField = new JTextField();
-        equationField.setFont(new Font("Consolas", Font.PLAIN, 18));
-        equationField.setBackground(new Color(70, 70, 70));
-        equationField.setForeground(Color.WHITE);
-        equationField.setCaretColor(Color.WHITE);
-
-        JLabel hint = new JLabel("例: 2*x + 3 = 7 或 x^2 - 4 = 0");
-        hint.setFont(new Font("Microsoft YaHei UI", Font.ITALIC, 12));
-        hint.setForeground(Color.LIGHT_GRAY);
-
-        inputPanel.add(equationField, BorderLayout.CENTER);
-        inputPanel.add(hint, BorderLayout.SOUTH);
-
-        JButton solveBtn = createStyledButton("求解方程", ButtonType.EQUALS);
-        solveBtn.setPreferredSize(new Dimension(200, 55));
-        solveBtn.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 16));
-        solveBtn.addActionListener(e -> solveEquation(equationField.getText()));
-
-        panel.add(inputPanel, BorderLayout.CENTER);
-        panel.add(solveBtn, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    private JPanel createGraphPanel() {
-        JPanel panel = new JPanel(new BorderLayout(12, 12));
-        panel.setBackground(new Color(40, 40, 40));
-        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-        JPanel inputPanel = new JPanel(new BorderLayout(8, 8));
-        inputPanel.setBackground(new Color(55, 55, 55));
-        inputPanel.setBorder(new TitledBorder(
-                new LineBorder(Color.GRAY, 2),
-                "函数表达式 y = f(x)",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                new Font("Microsoft YaHei UI", Font.BOLD, 14),
-                Color.WHITE
-        ));
-        inputPanel.setBorder(BorderFactory.createCompoundBorder(
-                inputPanel.getBorder(),
-                new EmptyBorder(12, 12, 12, 12)
-        ));
-
-        JTextField funcField = new JTextField("sin(x)");
-        funcField.setFont(new Font("Consolas", Font.PLAIN, 18));
-        funcField.setBackground(new Color(70, 70, 70));
-        funcField.setForeground(Color.WHITE);
-        funcField.setCaretColor(Color.WHITE);
-
-        inputPanel.add(funcField, BorderLayout.CENTER);
-
-        JPanel quickPanel = new JPanel(new GridLayout(3, 3, 6, 6));
-        quickPanel.setBackground(new Color(40, 40, 40));
-        quickPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
-
-        String[] quickFuncs = {
-                "sin(x)", "cos(x)", "tan(x)",
-                "x^2", "x^3", "sqrt(x)",
-                "exp(x)", "log(x)", "abs(x)"
-        };
-
-        for (String func : quickFuncs) {
-            JButton btn = createStyledButton(func, ButtonType.FUNCTION);
-            btn.addActionListener(e -> funcField.setText(func));
-            quickPanel.add(btn);
-        }
-
-        JButton plotBtn = createStyledButton("绘制图形", ButtonType.EQUALS);
-        plotBtn.setPreferredSize(new Dimension(200, 55));
-        plotBtn.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 16));
-        plotBtn.addActionListener(e -> plotGraph(funcField.getText()));
-
-        JPanel topPanel = new JPanel(new BorderLayout(12, 12));
-        topPanel.setBackground(new Color(40, 40, 40));
-        topPanel.add(inputPanel, BorderLayout.NORTH);
-        topPanel.add(quickPanel, BorderLayout.CENTER);
-        topPanel.add(plotBtn, BorderLayout.SOUTH);
-
-        panel.add(topPanel, BorderLayout.NORTH);
-
-        return panel;
-    }
-
-    private JButton createStyledButton(String text, ButtonType type) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 13));
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        Color bgColor;
-        if (type == ButtonType.NUMBER) {
-            bgColor = new Color(75, 75, 75);
-        } else if (type == ButtonType.OPERATOR) {
-            bgColor = new Color(200, 100, 40);
-        } else if (type == ButtonType.FUNCTION) {
-            bgColor = new Color(40, 100, 180);
-        } else if (type == ButtonType.SPECIAL) {
-            bgColor = new Color(180, 40, 40);
-        } else if (type == ButtonType.EQUALS) {
-            bgColor = new Color(40, 150, 40);
-        } else {
-            bgColor = new Color(120, 40, 150);
-        }
-
-        button.setBackground(bgColor);
-        button.setForeground(Color.BLACK);
-        button.setBorder(new EmptyBorder(8, 12, 8, 12));
-
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(bgColor.brighter());
-            }
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(bgColor);
-            }
+    private JButton createStyledButton(String text) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 14));
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setBackground(new Color(80, 80, 80));
+        btn.setForeground(Color.BLACK);
+        btn.setBorder(new EmptyBorder(8, 12, 8, 12));
+        btn.addActionListener(e -> handleButtonClick(text));
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { btn.setBackground(btn.getBackground().brighter()); }
+            public void mouseExited(MouseEvent e) { btn.setBackground(new Color(80, 80, 80)); }
         });
-
-        button.addActionListener(e -> handleButtonClick(text));
-
-        return button;
+        return btn;
     }
 
     private void handleButtonClick(String text) {
-        String current = display.getText().trim();
-
+        String cur = display.getText();
         if (text.equals("AC")) {
             display.setText("0");
             statusLabel.setText("DEG | M: " + engine.getMemory());
         } else if (text.equals("DEL")) {
-            if (current.length() > 1) {
-                display.setText(current.substring(0, current.length() - 1));
-            } else {
-                display.setText("0");
-            }
+            if (cur.length() <= 1) display.setText("0");
+            else display.setText(cur.substring(0, cur.length() - 1));
         } else if (text.equals("=")) {
             try {
-                String result = engine.calculate(current);
-                display.setText(result);
+                String res = engine.calculate(cur);
+                display.setText(res);
                 statusLabel.setText("DEG | M: " + engine.getMemory());
             } catch (Exception ex) {
                 display.setText("错误: " + ex.getMessage());
             }
         } else if (text.equals("ANS")) {
-            if (current.equals("0")) {
-                display.setText(engine.getLastAnswer());
-            } else {
-                display.setText(current + engine.getLastAnswer());
-            }
+            display.setText(engine.getLastAnswer());
         } else if (text.equals("MC")) {
             engine.memoryClear();
-            statusLabel.setText("DEG | M: 0");
+            statusLabel.setText("DEG | M: " + engine.getMemory());
         } else if (text.equals("MR")) {
             display.setText(String.valueOf(engine.memoryRecall()));
-        } else if (text.equals("M+") || text.equals("M-") || text.equals("MS")) {
-            try {
-                double val = Double.parseDouble(current);
-                if (text.equals("M+")) {
-                    engine.memoryAdd(val);
-                } else if (text.equals("M-")) {
-                    engine.memorySubtract(val);
-                } else {
-                    engine.memoryStore(val);
-                }
-                statusLabel.setText("DEG | M: " + engine.getMemory());
-            } catch (NumberFormatException ex) {
-                display.setText("错误: 无效数字");
-            }
+        } else if (text.equals("M+")) {
+            try { engine.memoryAdd(Double.parseDouble(display.getText())); statusLabel.setText("DEG | M: " + engine.getMemory()); }
+            catch (Exception ex) { display.setText("错误: 无效数字"); }
+        } else if (text.equals("M-")) {
+            try { engine.memorySubtract(Double.parseDouble(display.getText())); statusLabel.setText("DEG | M: " + engine.getMemory()); }
+            catch (Exception ex) { display.setText("错误: 无效数字"); }
+        } else if (text.equals("MS")) {
+            try { engine.memoryStore(Double.parseDouble(display.getText())); statusLabel.setText("DEG | M: " + engine.getMemory()); }
+            catch (Exception ex) { display.setText("错误: 无效数字"); }
         } else {
-            if (current.equals("0") || current.startsWith("错误")) {
-                display.setText(text);
+            if (cur.equals("0") || cur.startsWith("错误")) display.setText(text);
+            else display.setText(cur + text);
+        }
+    }
+
+    /* ------------------ 矩阵面板（动态大小） ------------------ */
+
+    private JPanel createMatrixPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panel.setBackground(new Color(36, 36, 36));
+        panel.setPreferredSize(new Dimension(1000, 380));
+
+        JPanel top = new JPanel(new GridLayout(1, 2, 12, 12));
+        top.setBackground(new Color(36, 36, 36));
+
+        // 左侧：矩阵 A 控件
+        JPanel left = new JPanel(new BorderLayout(6, 6));
+        left.setBackground(new Color(48, 48, 48));
+        left.setBorder(new TitledBorder(new LineBorder(Color.GRAY, 2), "矩阵 A", TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Microsoft YaHei UI", Font.BOLD, 14), Color.WHITE));
+        left.add(createMatrixControlPanel(true), BorderLayout.NORTH);
+        matrixAContainer = new JPanel();
+        matrixAContainer.setBackground(new Color(55, 55, 55));
+        left.add(new JScrollPane(matrixAContainer), BorderLayout.CENTER);
+
+        // 右侧：矩阵 B 控件
+        JPanel right = new JPanel(new BorderLayout(6, 6));
+        right.setBackground(new Color(48, 48, 48));
+        right.setBorder(new TitledBorder(new LineBorder(Color.GRAY, 2), "矩阵 B", TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Microsoft YaHei UI", Font.BOLD, 14), Color.WHITE));
+        right.add(createMatrixControlPanel(false), BorderLayout.NORTH);
+        matrixBContainer = new JPanel();
+        matrixBContainer.setBackground(new Color(55, 55, 55));
+        right.add(new JScrollPane(matrixBContainer), BorderLayout.CENTER);
+
+        top.add(left);
+        top.add(right);
+
+        // 操作按钮区
+        JPanel ops = new JPanel(new GridLayout(2, 4, 8, 8));
+        ops.setBackground(new Color(36, 36, 36));
+        String[] opsList = {"A + B", "A - B", "A * B", "det(A)", "A^-1", "A^T", "Parse A from Text", "Parse B from Text"};
+        for (String op : opsList) {
+            JButton btn = new JButton(op);
+            btn.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 13));
+            btn.addActionListener(e -> handleMatrixAction(op));
+            ops.add(btn);
+        }
+
+        panel.add(top, BorderLayout.CENTER);
+        panel.add(ops, BorderLayout.SOUTH);
+
+        // 初始化默认矩阵（3x3）
+        buildMatrixGrid(true, 3, 3);
+        buildMatrixGrid(false, 3, 3);
+
+        return panel;
+    }
+
+    private JPanel createMatrixControlPanel(boolean isA) {
+        JPanel p = new JPanel(new BorderLayout(6, 6));
+        p.setBackground(new Color(55, 55, 55));
+
+        JPanel inputRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
+        inputRow.setBackground(new Color(55, 55, 55));
+        inputRow.add(new JLabel("行:"));
+        JTextField rowsField = new JTextField("3", 3);
+        inputRow.add(rowsField);
+        inputRow.add(new JLabel("列:"));
+        JTextField colsField = new JTextField("3", 3);
+        inputRow.add(colsField);
+
+        JButton genBtn = new JButton("生成矩阵");
+        genBtn.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+        genBtn.addActionListener(e -> {
+            int r = parsePositiveInt(rowsField.getText(), 3);
+            int c = parsePositiveInt(colsField.getText(), 3);
+            buildMatrixGrid(isA, r, c);
+        });
+        inputRow.add(genBtn);
+
+        JTextArea textArea = new JTextArea(3, 20);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        JScrollPane taScroll = new JScrollPane(textArea);
+        taScroll.setPreferredSize(new Dimension(260, 70));
+
+        p.add(inputRow, BorderLayout.NORTH);
+        p.add(taScroll, BorderLayout.CENTER);
+
+        if (isA) {
+            matrixARowsField = rowsField;
+            matrixAColsField = colsField;
+            matrixATextArea = textArea;
+        } else {
+            matrixBRowsField = rowsField;
+            matrixBColsField = colsField;
+            matrixBTextArea = textArea;
+        }
+
+        return p;
+    }
+
+    private int parsePositiveInt(String s, int defaultVal) {
+        try {
+            int v = Integer.parseInt(s.trim());
+            return Math.max(1, Math.min(v, 200));
+        } catch (Exception ex) {
+            return defaultVal;
+        }
+    }
+
+    private void buildMatrixGrid(boolean isA, int rows, int cols) {
+        JPanel container = isA ? matrixAContainer : matrixBContainer;
+        container.removeAll();
+        container.setLayout(new BorderLayout());
+
+        JPanel grid = new JPanel(new GridLayout(rows, cols, 6, 6));
+        grid.setBackground(new Color(70, 70, 70));
+        List<List<JTextField>> targetList = new ArrayList<>();
+
+        for (int i = 0; i < rows; i++) {
+            List<JTextField> rowList = new ArrayList<>();
+            for (int j = 0; j < cols; j++) {
+                JTextField tf = new JTextField("0");
+                tf.setHorizontalAlignment(JTextField.CENTER);
+                tf.setFont(new Font("Consolas", Font.PLAIN, 13));
+                tf.setBackground(new Color(60, 60, 60));
+                tf.setForeground(Color.WHITE);
+                grid.add(tf);
+                rowList.add(tf);
+            }
+            targetList.add(rowList);
+        }
+
+        container.add(grid, BorderLayout.CENTER);
+        container.revalidate();
+        container.repaint();
+
+        if (isA) {
+            matrixAFields = targetList;
+            matrixARowsField.setText(String.valueOf(rows));
+            matrixAColsField.setText(String.valueOf(cols));
+        } else {
+            matrixBFields = targetList;
+            matrixBRowsField.setText(String.valueOf(rows));
+            matrixBColsField.setText(String.valueOf(cols));
+        }
+    }
+
+    private void handleMatrixAction(String op) {
+        try {
+            double[][] A = null;
+            double[][] B = null;
+            if (matrixATextArea != null && !matrixATextArea.getText().trim().isEmpty()) {
+                try {
+                    A = CalculatorEngine.parseMatrixFromString(matrixATextArea.getText());
+                } catch (Exception ex) {
+                    A = readMatrixFromGrid(matrixAFields);
+                }
             } else {
-                display.setText(current + text);
+                A = readMatrixFromGrid(matrixAFields);
+            }
+
+            if (op.contains("B") || op.contains("*")) {
+                if (matrixBTextArea != null && !matrixBTextArea.getText().trim().isEmpty()) {
+                    try {
+                        B = CalculatorEngine.parseMatrixFromString(matrixBTextArea.getText());
+                    } catch (Exception ex) {
+                        B = readMatrixFromGrid(matrixBFields);
+                    }
+                } else {
+                    B = readMatrixFromGrid(matrixBFields);
+                }
+            }
+
+            String result = CalculatorEngine.performMatrixOperation(op, A, B);
+            display.setText(result);
+
+        } catch (NumberFormatException nfe) {
+            display.setText("矩阵输入错误：请确保所有单元为数字");
+        } catch (Exception ex) {
+            display.setText("矩阵运算错误: " + ex.getMessage());
+        }
+    }
+
+    private double[][] readMatrixFromGrid(List<List<JTextField>> gridFields) {
+        if (gridFields == null || gridFields.size() == 0) throw new IllegalArgumentException("矩阵未初始化");
+        int rows = gridFields.size();
+        int cols = gridFields.get(0).size();
+        double[][] m = new double[rows][cols];
+        for (int i = 0; i < rows; i++) {
+            List<JTextField> row = gridFields.get(i);
+            if (row.size() != cols) throw new IllegalArgumentException("矩阵列数不一致");
+            for (int j = 0; j < cols; j++) {
+                String s = row.get(j).getText().trim();
+                if (s.isEmpty()) s = "0";
+                m[i][j] = Double.parseDouble(s);
             }
         }
+        return m;
     }
 
-    private void performMatrixOperation(String operation) {
-        try {
-            double[][] matrixA = readMatrix(matrixAFields);
-            double[][] matrixB = readMatrix(matrixBFields);
+    /* ------------------ 方程求解面板 ------------------ */
 
-            String result = MatrixCalculator.performOperation(operation, matrixA, matrixB);
-            display.setText(result);
-        } catch (Exception ex) {
-            display.setText("矩阵错误: " + ex.getMessage());
+    private JPanel createEquationPanel() {
+        JPanel p = new JPanel(new BorderLayout(10, 10));
+        p.setBackground(new Color(36, 36, 36));
+        p.setBorder(new EmptyBorder(10, 10, 10, 10));
+        p.setPreferredSize(new Dimension(1000, 320));
+
+        JPanel inputPane = new JPanel(new BorderLayout(6, 6));
+        inputPane.setBackground(new Color(55, 55, 55));
+        inputPane.setBorder(new TitledBorder(new LineBorder(Color.GRAY, 2), "输入方程（多行或用 ; 分隔）",
+                TitledBorder.LEFT, TitledBorder.TOP, new Font("Microsoft YaHei UI", Font.BOLD, 14), Color.WHITE));
+
+        equationsTextArea = new JTextArea(6, 60);
+        equationsTextArea.setFont(new Font("Consolas", Font.PLAIN, 14));
+        equationsTextArea.setLineWrap(true);
+        equationsTextArea.setWrapStyleWord(true);
+        equationsTextArea.setText("例：\nx + 2y - z = 3;\n3x - y + 4z = 1;\n-2x + 5y + 2z = 7");
+
+        inputPane.add(new JScrollPane(equationsTextArea), BorderLayout.CENTER);
+
+        JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        south.setBackground(new Color(36, 36, 36));
+        JButton solveBtn = new JButton("求解");
+        solveBtn.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 14));
+        solveBtn.setPreferredSize(new Dimension(140, 44));
+        solveBtn.addActionListener(e -> solveEquationsAction());
+        south.add(solveBtn);
+
+        p.add(inputPane, BorderLayout.CENTER);
+        p.add(south, BorderLayout.SOUTH);
+
+        return p;
+    }
+
+    private void solveEquationsAction() {
+        String input = equationsTextArea.getText();
+        if (input == null || input.trim().isEmpty()) {
+            display.setText("方程输入为空");
+            return;
         }
+        String out = engine.solveEquation(input);
+        display.setText(out);
     }
 
-    private double[][] readMatrix(JTextField[][] fields) throws NumberFormatException {
-        double[][] matrix = new double[3][3];
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                matrix[i][j] = Double.parseDouble(fields[i][j].getText().trim());
+    /* ------------------ 函数绘图 ------------------ */
+
+    private JPanel createGraphPanel() {
+        JPanel p = new JPanel(new BorderLayout(10, 10));
+        p.setBorder(new EmptyBorder(10, 10, 10, 10));
+        p.setBackground(new Color(36, 36, 36));
+        p.setPreferredSize(new Dimension(1000, 360));
+
+        JPanel input = new JPanel(new BorderLayout(6, 6));
+        input.setBackground(new Color(55, 55, 55));
+        input.setBorder(new TitledBorder(new LineBorder(Color.GRAY, 2), "函数 y = f(x)",
+                TitledBorder.LEFT, TitledBorder.TOP, new Font("Microsoft YaHei UI", Font.BOLD, 14), Color.WHITE));
+
+        JTextField funcField = new JTextField("sin(x)");
+        funcField.setFont(new Font("Consolas", Font.PLAIN, 16));
+        funcField.setBackground(new Color(70, 70, 70));
+        funcField.setForeground(Color.WHITE);
+        funcField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(100, 100, 100), 2),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        input.add(funcField, BorderLayout.CENTER);
+
+        JPanel quickPanel = new JPanel(new BorderLayout(8, 8));
+        quickPanel.setBackground(new Color(36, 36, 36));
+
+        JPanel basicFuncs = new JPanel(new GridLayout(2, 5, 6, 6));
+        basicFuncs.setBackground(new Color(36, 36, 36));
+        basicFuncs.setBorder(new TitledBorder(
+            BorderFactory.createLineBorder(new Color(80, 80, 80), 1),
+            "基础函数",
+            TitledBorder.LEFT, TitledBorder.TOP,
+            new Font("Microsoft YaHei UI", Font.PLAIN, 11),
+            new Color(180, 180, 180)
+        ));
+        
+        String[] basicList = {
+            "sin(x)", "cos(x)", "tan(x)", "x^2", "x^3",
+            "sqrt(x)", "exp(x)", "log(x)", "abs(x)", "1/x"
+        };
+        for (String q : basicList) {
+            JButton b = createQuickFunctionButton(q, funcField);
+            basicFuncs.add(b);
+        }
+
+        JPanel compositeFuncs = new JPanel(new GridLayout(2, 5, 6, 6));
+        compositeFuncs.setBackground(new Color(36, 36, 36));
+        compositeFuncs.setBorder(new TitledBorder(
+            BorderFactory.createLineBorder(new Color(80, 80, 80), 1),
+            "复合函数",
+            TitledBorder.LEFT, TitledBorder.TOP,
+            new Font("Microsoft YaHei UI", Font.PLAIN, 11),
+            new Color(180, 180, 180)
+        ));
+        
+        String[] compositeList = {
+            "sin(cos(x))", "cos(sin(x))", "exp(-x^2)", "log(abs(x))", "sqrt(x^2+1)",
+            "sin(x)*cos(x)", "x*exp(-x)", "sin(x)/x", "tan(x^2)", "(x^2-1)/(x^2+1)"
+        };
+        for (String q : compositeList) {
+            JButton b = createQuickFunctionButton(q, funcField);
+            compositeFuncs.add(b);
+        }
+
+        quickPanel.add(basicFuncs, BorderLayout.NORTH);
+        quickPanel.add(compositeFuncs, BorderLayout.CENTER);
+
+        JButton plotBtn = new JButton("绘制图形");
+        plotBtn.setFont(new Font("Microsoft YaHei UI", Font.BOLD, 16));
+        plotBtn.setPreferredSize(new Dimension(180, 50));
+        plotBtn.setBackground(new Color(0, 120, 215));
+        plotBtn.setForeground(Color.BLACK);
+        plotBtn.setFocusPainted(false);
+        plotBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        plotBtn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                plotBtn.setBackground(new Color(0, 140, 255));
             }
-        }
-        return matrix;
+            public void mouseExited(MouseEvent e) {
+                plotBtn.setBackground(new Color(0, 120, 215));
+            }
+        });
+        plotBtn.addActionListener(e -> {
+            String f = funcField.getText();
+            if (f == null || f.trim().isEmpty()) {
+                display.setText("函数输入为空");
+                return;
+            }
+            try {
+                GraphPlotter gp = new GraphPlotter(f);
+                gp.setVisible(true);
+                display.setText("已打开绘图窗口: y = " + f);
+            } catch (Exception ex) {
+                display.setText("绘图错误: " + ex.getMessage());
+            }
+        });
+
+        JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        south.setBackground(new Color(36, 36, 36));
+        
+        JButton helpBtn = new JButton("帮助");
+        helpBtn.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+        helpBtn.setFocusPainted(false);
+        helpBtn.addActionListener(e -> showFunctionHelp());
+        south.add(helpBtn);
+        
+        south.add(plotBtn);
+
+        p.add(input, BorderLayout.NORTH);
+        p.add(quickPanel, BorderLayout.CENTER);
+        p.add(south, BorderLayout.SOUTH);
+
+        return p;
     }
 
-    private void solveEquation(String equation) {
-        try {
-            String result = engine.solveEquation(equation);
-            display.setText(result);
-        } catch (Exception ex) {
-            display.setText("方程错误: " + ex.getMessage());
-        }
+    private JButton createQuickFunctionButton(String funcText, JTextField targetField) {
+        JButton b = new JButton(funcText);
+        b.setFont(new Font("Consolas", Font.PLAIN, 11));
+        b.setBackground(new Color(70, 70, 70));
+        b.setForeground(new Color(20, 20, 220));
+        b.setFocusPainted(false);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.addActionListener(e -> targetField.setText(funcText));
+        b.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                b.setBackground(new Color(90, 90, 90));
+            }
+            public void mouseExited(MouseEvent e) {
+                b.setBackground(new Color(70, 70, 70));
+            }
+        });
+        return b;
     }
 
-    private void plotGraph(String function) {
-        try {
-            GraphPlotter plotter = new GraphPlotter(function);
-            plotter.setVisible(true);
-        } catch (Exception ex) {
-            display.setText("绘图错误: " + ex.getMessage());
-        }
+    private void showFunctionHelp() {
+        String helpText = 
+            "═══════════════════════════════════════\n" +
+            "              函数绘图帮助\n" +
+            "═══════════════════════════════════════\n\n" +
+            "【基础函数】\n" +
+            "  • 三角函数: sin(x), cos(x), tan(x)\n" +
+            "  • 指数对数: exp(x), log(x), sqrt(x)\n" +
+            "  • 幂函数: x^2, x^3, x^n\n" +
+            "  • 其他: abs(x), 1/x\n\n" +
+            "【复合函数】\n" +
+            "  • 嵌套函数: sin(cos(x)), log(abs(x))\n" +
+            "  • 四则运算: sin(x)*cos(x), x*exp(-x)\n" +
+            "  • 分式: sin(x)/x, (x^2-1)/(x^2+1)\n" +
+            "  • 多项式: x^3 - 2*x^2 + x - 1\n\n" +
+            "【常用示例】\n" +
+            "  • 高斯函数: exp(-x^2)\n" +
+            "  • 双曲正弦: (exp(x)-exp(-x))/2\n" +
+            "  • 洛伦兹函数: 1/(1+x^2)\n" +
+            "  • 阻尼振荡: exp(-x)*sin(5*x)\n\n" +
+            "【运算符】\n" +
+            "  + - * / ^  (加减乘除乘方)\n" +
+            "  支持括号嵌套\n\n" +
+            "【提示】\n" +
+            "  • 绘图窗口可调整 X 范围和步长\n" +
+            "  • 使用鼠标滚轮可缩放图形\n" +
+            "  • 自动处理无效值（如 log(0)）\n" +
+            "═══════════════════════════════════════";
+        
+        JTextArea textArea = new JTextArea(helpText);
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 13));
+        textArea.setBackground(new Color(250, 250, 250));
+        textArea.setCaretPosition(0);
+        
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(480, 520));
+        
+        JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "函数绘图帮助",
+            JOptionPane.INFORMATION_MESSAGE
+        );
     }
+
+    /* ------------------ 启动 ------------------ */
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
-                // Windows 系统外观
-                UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-            } catch (Exception e) {
-                try {
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-
-            CasioCalculator calculator = new CasioCalculator();
-            calculator.setVisible(true);
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ignored) {}
+            CasioCalculator app = new CasioCalculator();
+            app.setVisible(true);
         });
-    }
-
-    enum ButtonType {
-        NUMBER, OPERATOR, FUNCTION, SPECIAL, EQUALS, MEMORY
     }
 }
