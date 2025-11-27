@@ -8,21 +8,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * CalculatorEngine - 增强版（支持非线性方程组）
- *
- * 新增功能：
- *  - 非线性方程组数值求解（牛顿-拉夫森法）
- *  - 自动检测方程组类型（线性/非线性）
- *  - 支持多种数值方法
- *
- * 功能：
- *  - 普通表达式计算（exp4j）
- *  - 单方程数值求根
- *  - 线性方程组解析与求解
- *  - **非线性方程组数值求解**（新增）
- *  - 任意大小矩阵运算
- */
 public class CalculatorEngine {
 
     private double memory = 0;
@@ -46,6 +31,8 @@ public class CalculatorEngine {
 
             lastAnswer = formatResult(result);
             return lastAnswer;
+        } catch (ArithmeticException e) {
+            throw new Exception("算术错误: " + e.getMessage());
         } catch (Exception e) {
             throw new Exception("计算错误: " + e.getMessage());
         }
@@ -53,28 +40,21 @@ public class CalculatorEngine {
 
     private String preprocessExpression(String expr) {
         if (expr == null) return "";
-        
+
         expr = expr.replace("×", "*");
         expr = expr.replace("÷", "/");
         expr = expr.replace("π", String.valueOf(Math.PI));
-        expr = expr.replace("（", "(").replace("）", ")");
+        expr = expr.replace("(", "(").replace(")", ")");
         expr = expr.replace("(−)", "(-1)");
         expr = expr.replace(" ", "");
-        
-        // 安全的 'e' 常数替换
+
         expr = expr.replaceAll("(?<![a-zA-Z])e(?![a-zA-Z0-9])", String.valueOf(Math.E));
-        
+
         return expr;
     }
 
-    /* ------------------ 方程组求解（增强版） ------------------ */
+    /* ------------------ 方程组求解 ------------------ */
 
-    /**
-     * 智能方程求解器
-     * - 单方程：数值求根
-     * - 线性方程组：高斯消元
-     * - 非线性方程组：牛顿-拉夫森法
-     */
     public String solveEquation(String input) {
         if (input == null || input.trim().isEmpty()) return "方程不能为空";
 
@@ -85,15 +65,13 @@ public class CalculatorEngine {
 
         try {
             if (looksLikeSystem) {
-                // 多方程系统
                 String[] eqs = Arrays.stream(trimmed.split("[;\\n\\r]+"))
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
                         .toArray(String[]::new);
-                
-                // 检测是否为线性方程组
+
+                // 修复问题2：改进线性方程组检测
                 if (isLinearSystem(eqs)) {
-                    // 线性方程组 - 使用高斯消元
                     Map<String, Double> sol = LinearSolver.solveLinearSystemFromStrings(eqs);
                     StringBuilder sb = new StringBuilder();
                     sb.append("线性方程组解：\n");
@@ -101,7 +79,6 @@ public class CalculatorEngine {
                     lastAnswer = sb.toString();
                     return sb.toString();
                 } else {
-                    // 非线性方程组 - 使用牛顿法
                     Map<String, Double> sol = NonlinearSolver.solveNonlinearSystem(eqs);
                     StringBuilder sb = new StringBuilder();
                     sb.append("非线性方程组数值解：\n");
@@ -111,7 +88,6 @@ public class CalculatorEngine {
                     return sb.toString();
                 }
             } else {
-                // 单方程
                 if (!trimmed.contains("=")) return "方程必须包含等号 (=)";
 
                 String[] parts = trimmed.split("=");
@@ -138,19 +114,26 @@ public class CalculatorEngine {
     }
 
     /**
-     * 检测是否为线性方程组
+     * 修复问题2：改进的线性方程组检测
      */
     private boolean isLinearSystem(String[] equations) {
         for (String eq : equations) {
             if (eq == null || eq.trim().isEmpty()) continue;
             String[] sides = eq.split("=");
             if (sides.length != 2) continue;
-            
+
             String lhs = sides[0].trim();
-            // 检测非线性特征：乘方、乘法、三角函数、指数等
-            if (lhs.contains("^") || lhs.contains("*") && !lhs.matches(".*\\d+\\s*\\*\\s*[a-zA-Z].*") ||
-                lhs.contains("sin") || lhs.contains("cos") || lhs.contains("tan") ||
-                lhs.contains("exp") || lhs.contains("log") || lhs.contains("sqrt")) {
+
+            // 检测非线性特征
+            // 1. 幂运算
+            if (lhs.contains("^")) return false;
+
+            // 2. 变量相乘 (如 x*y)
+            if (lhs.matches(".*[a-zA-Z]\\s*\\*\\s*[a-zA-Z].*")) return false;
+
+            // 3. 三角函数和其他非线性函数
+            if (lhs.contains("sin") || lhs.contains("cos") || lhs.contains("tan") ||
+                    lhs.contains("exp") || lhs.contains("log") || lhs.contains("sqrt")) {
                 return false;
             }
         }
@@ -226,65 +209,51 @@ public class CalculatorEngine {
 
     /* ------------------ 非线性方程组求解器 ------------------ */
 
-    /**
-     * 非线性方程组求解器（牛顿-拉夫森法）
-     */
     public static class NonlinearSolver {
-        
-        private static final double EPSILON = 1e-8;  // 收敛精度
-        private static final int MAX_ITERATIONS = 100;  // 最大迭代次数
-        private static final double DELTA = 1e-6;  // 数值微分步长
 
-        /**
-         * 求解非线性方程组（增强版 - 多初始值尝试）
-         * @param equations 方程数组，如 ["x^2 + y^2 = 25", "x*y = 12"]
-         * @return 变量名 -> 值的映射
-         */
+        private static final double EPSILON = 1e-8;
+        private static final int MAX_ITERATIONS = 100;
+        private static final double DELTA = 1e-6;
+
         public static Map<String, Double> solveNonlinearSystem(String[] equations) {
-            // 1. 解析方程，提取变量
             List<String> variables = extractVariables(equations);
             int n = variables.size();
-            
+
             if (n == 0) throw new IllegalArgumentException("未检测到未知数");
             if (equations.length != n) {
                 throw new IllegalArgumentException(
-                    String.format("方程数 (%d) 与未知数数 (%d) 不一致", equations.length, n));
+                        String.format("方程数 (%d) 与未知数数 (%d) 不一致", equations.length, n));
             }
 
-            // 2. 构建函数表达式 f(x) = 0
             List<String> functions = new ArrayList<>();
             for (String eq : equations) {
                 String[] parts = eq.split("=");
                 if (parts.length != 2) throw new IllegalArgumentException("方程格式错误: " + eq);
-                // f(x) = left - right
                 functions.add("(" + parts[0].trim() + ")-(" + parts[1].trim() + ")");
             }
 
-            // 3. 尝试多组初始值
             double[][] initialGuesses = {
-                {1.0, 1.0, 1.0},      // [1, 1, 1, ...]
-                {0.5, 0.5, 0.5},      // [0.5, 0.5, ...]
-                {2.0, 2.0, 2.0},      // [2, 2, ...]
-                {-1.0, -1.0, -1.0},   // [-1, -1, ...]
-                {0.1, 0.1, 0.1},      // [0.1, 0.1, ...]
-                {5.0, 5.0, 5.0},      // [5, 5, ...]
-                {3.0, 4.0, 5.0},      // 渐进值
-                {-2.0, 3.0, -1.0}     // 混合正负
+                    {1.0, 1.0, 1.0},
+                    {0.5, 0.5, 0.5},
+                    {2.0, 2.0, 2.0},
+                    {-1.0, -1.0, -1.0},
+                    {0.1, 0.1, 0.1},
+                    {5.0, 5.0, 5.0},
+                    {3.0, 4.0, 5.0},
+                    {-2.0, 3.0, -1.0}
             };
 
             Exception lastException = null;
-            
+
             for (double[] guess : initialGuesses) {
                 try {
                     double[] x0 = new double[n];
                     for (int i = 0; i < n; i++) {
                         x0[i] = i < guess.length ? guess[i] : 1.0;
                     }
-                    
-                    // 4. 牛顿迭代
+
                     double[] solution = newtonRaphson(functions, variables, x0);
-                    
-                    // 5. 验证解的有效性
+
                     if (verifySolution(functions, variables, solution)) {
                         Map<String, Double> result = new LinkedHashMap<>();
                         for (int i = 0; i < n; i++) {
@@ -294,46 +263,36 @@ public class CalculatorEngine {
                     }
                 } catch (Exception e) {
                     lastException = e;
-                    // 继续尝试下一组初始值
                 }
             }
-            
-            // 所有初始值都失败
+
             if (lastException != null) {
                 throw new RuntimeException("所有初始值尝试均失败，最后错误: " + lastException.getMessage());
             } else {
                 throw new RuntimeException("无法找到有效的数值解");
             }
         }
-        
-        /**
-         * 验证解的正确性
-         */
-        private static boolean verifySolution(List<String> functions, 
-                                             List<String> variables, 
-                                             double[] x) {
+
+        private static boolean verifySolution(List<String> functions,
+                                              List<String> variables,
+                                              double[] x) {
             double[] F = evaluateFunctions(functions, variables, x);
             double residual = 0;
             for (double v : F) {
                 if (Double.isNaN(v) || Double.isInfinite(v)) return false;
                 residual += v * v;
             }
-            // 残差小于阈值则认为是有效解
             return Math.sqrt(residual) < 1e-6;
         }
 
-        /**
-         * 提取方程组中的所有变量
-         */
         private static List<String> extractVariables(String[] equations) {
             LinkedHashSet<String> varSet = new LinkedHashSet<>();
             Pattern varPattern = Pattern.compile("\\b([a-zA-Z]\\w*)\\b");
-            
+
             for (String eq : equations) {
                 Matcher m = varPattern.matcher(eq);
                 while (m.find()) {
                     String token = m.group(1);
-                    // 排除函数名
                     if (!isFunctionName(token)) {
                         varSet.add(token);
                     }
@@ -343,8 +302,8 @@ public class CalculatorEngine {
         }
 
         private static boolean isFunctionName(String token) {
-            String[] funcs = {"sin", "cos", "tan", "exp", "log", "sqrt", "abs", 
-                            "asin", "acos", "atan", "sinh", "cosh", "tanh"};
+            String[] funcs = {"sin", "cos", "tan", "exp", "log", "sqrt", "abs",
+                    "asin", "acos", "atan", "sinh", "cosh", "tanh"};
             for (String f : funcs) {
                 if (token.equals(f)) return true;
             }
@@ -352,47 +311,37 @@ public class CalculatorEngine {
         }
 
         /**
-         * 牛顿-拉夫森迭代法（增强版 - 阻尼牛顿法）
-         * @param functions f(x) = 0 的函数列表
-         * @param variables 变量名列表
-         * @param x0 初始猜测
-         * @return 数值解
+         * 修复问题5：增强数值稳定性检测
          */
-        private static double[] newtonRaphson(List<String> functions, 
-                                             List<String> variables, 
-                                             double[] x0) {
+        private static double[] newtonRaphson(List<String> functions,
+                                              List<String> variables,
+                                              double[] x0) {
             int n = x0.length;
             double[] x = Arrays.copyOf(x0, n);
 
             for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
-                // 计算 F(x)
                 double[] F = evaluateFunctions(functions, variables, x);
-                
-                // 检查收敛
+
                 double norm = 0;
                 for (double v : F) {
                     if (Double.isNaN(v) || Double.isInfinite(v)) {
-                        throw new RuntimeException("函数值包含 NaN 或无穷大，可能初始值不合适");
+                        throw new RuntimeException("函数值包含 NaN 或无穷大");
                     }
                     norm += v * v;
                 }
                 norm = Math.sqrt(norm);
-                
+
                 if (norm < EPSILON) {
                     System.out.println("收敛于迭代 " + iter + "，残差: " + norm);
                     return x;
                 }
 
-                // 计算雅可比矩阵 J
                 double[][] J = computeJacobian(functions, variables, x);
-                
-                // 检查雅可比矩阵的条件数（判断是否接近奇异）
                 double det = computeDeterminant(J);
                 if (Math.abs(det) < 1e-12) {
-                    throw new RuntimeException("雅可比矩阵接近奇异 (det=" + det + ")，尝试其他初始值");
+                    throw new RuntimeException("雅可比矩阵接近奇异 (det=" + det + ")");
                 }
-                
-                // 求解线性系统 J * delta = -F（使用异常捕获）
+
                 double[] delta;
                 try {
                     SimpleMatrix Jmatrix = new SimpleMatrix(J);
@@ -405,23 +354,36 @@ public class CalculatorEngine {
                             throw new RuntimeException("求解步长包含 NaN 或无穷大");
                         }
                     }
+                } catch (RuntimeException re) {
+                    throw re;
                 } catch (Exception e) {
                     throw new RuntimeException("无法求解线性系统: " + e.getMessage());
                 }
 
-                // 阻尼因子（防止步长过大导致发散）
+                // ============================================
+                // 【关键修改】发散检测：检查步长而不是单个元素
+                // ============================================
+                double maxDelta = 0;
+                for (int i = 0; i < n; i++) {
+                    maxDelta = Math.max(maxDelta, Math.abs(delta[i]));
+                }
+
+                if (maxDelta > 1e6) {
+                    // 抛出异常让外层尝试下一组初始值，不提示用户
+                    throw new RuntimeException("迭代发散（最大步长: " + maxDelta + "）");
+                }
+                // ============================================
+
                 double alpha = 1.0;
                 double[] xNew = new double[n];
-                double normNew;
-                
-                // 回溯线搜索
+
                 for (int backtrack = 0; backtrack < 10; backtrack++) {
                     for (int i = 0; i < n; i++) {
                         xNew[i] = x[i] + alpha * delta[i];
                     }
-                    
+
                     double[] FNew = evaluateFunctions(functions, variables, xNew);
-                    normNew = 0;
+                    double normNew = 0;
                     boolean valid = true;
                     for (double v : FNew) {
                         if (Double.isNaN(v) || Double.isInfinite(v)) {
@@ -431,17 +393,14 @@ public class CalculatorEngine {
                         normNew += v * v;
                     }
                     normNew = Math.sqrt(normNew);
-                    
-                    // 如果新点更好，接受
+
                     if (valid && normNew < norm * 1.1) {
                         break;
                     }
-                    
-                    // 否则减小步长
+
                     alpha *= 0.5;
                 }
 
-                // 更新 x
                 for (int i = 0; i < n; i++) {
                     x[i] = xNew[i];
                 }
@@ -449,10 +408,7 @@ public class CalculatorEngine {
 
             throw new RuntimeException("牛顿法未收敛（达到最大迭代次数 " + MAX_ITERATIONS + "）");
         }
-        
-        /**
-         * 计算行列式（用于判断矩阵是否奇异）
-         */
+
         private static double computeDeterminant(double[][] matrix) {
             try {
                 SimpleMatrix m = new SimpleMatrix(matrix);
@@ -462,12 +418,9 @@ public class CalculatorEngine {
             }
         }
 
-        /**
-         * 计算函数值 F(x)
-         */
-        private static double[] evaluateFunctions(List<String> functions, 
-                                                 List<String> variables, 
-                                                 double[] x) {
+        private static double[] evaluateFunctions(List<String> functions,
+                                                  List<String> variables,
+                                                  double[] x) {
             double[] result = new double[functions.size()];
             for (int i = 0; i < functions.size(); i++) {
                 result[i] = evaluateFunction(functions.get(i), variables, x);
@@ -475,12 +428,9 @@ public class CalculatorEngine {
             return result;
         }
 
-        /**
-         * 计算单个函数值
-         */
-        private static double evaluateFunction(String function, 
-                                              List<String> variables, 
-                                              double[] x) {
+        private static double evaluateFunction(String function,
+                                               List<String> variables,
+                                               double[] x) {
             try {
                 ExpressionBuilder builder = new ExpressionBuilder(function);
                 for (String var : variables) {
@@ -496,20 +446,15 @@ public class CalculatorEngine {
             }
         }
 
-        /**
-         * 计算雅可比矩阵（数值微分）
-         * J[i][j] = ∂f_i/∂x_j
-         */
-        private static double[][] computeJacobian(List<String> functions, 
-                                                 List<String> variables, 
-                                                 double[] x) {
+        private static double[][] computeJacobian(List<String> functions,
+                                                  List<String> variables,
+                                                  double[] x) {
             int m = functions.size();
             int n = x.length;
             double[][] J = new double[m][n];
 
             for (int i = 0; i < m; i++) {
                 for (int j = 0; j < n; j++) {
-                    // 数值微分: f'(x) ≈ [f(x+h) - f(x-h)] / (2h)
                     double[] xPlus = Arrays.copyOf(x, n);
                     double[] xMinus = Arrays.copyOf(x, n);
                     xPlus[j] += DELTA;
@@ -556,12 +501,15 @@ public class CalculatorEngine {
             data.add(arr);
         }
         if (data.isEmpty()) throw new IllegalArgumentException("矩阵无有效数据");
-        
+
         double[][] mat = new double[data.size()][cols];
         for (int i = 0; i < data.size(); i++) mat[i] = data.get(i);
         return mat;
     }
 
+    /**
+     * 修复问题3：添加注释说明每个case都有return，无需break
+     */
     public static String performMatrixOperation(String operation, double[][] Aarray, double[][] Barray) {
         try {
             SimpleMatrix A = new SimpleMatrix(Aarray);
@@ -573,35 +521,47 @@ public class CalculatorEngine {
                     if (A.numRows() != B.numRows() || A.numCols() != B.numCols())
                         return "矩阵维度不匹配";
                     return matrixToString(A.plus(B));
+                // 每个case都有return，无需break
+
                 case "A - B":
                     if (B == null) return "需要矩阵 B";
                     if (A.numRows() != B.numRows() || A.numCols() != B.numCols())
                         return "矩阵维度不匹配";
                     return matrixToString(A.minus(B));
+
                 case "A * B":
                 case "A × B":
                     if (B == null) return "需要矩阵 B";
                     if (A.numCols() != B.numRows()) return "矩阵维度不兼容，无法相乘";
                     return matrixToString(A.mult(B));
+
                 case "det(A)":
                 case "det":
                     if (A.numRows() != A.numCols()) return "行列式仅对方阵定义";
                     return String.format("det(A) = %s", formatResult(A.determinant()));
+
                 case "A^-1":
                 case "A⁻¹":
                     if (A.numRows() != A.numCols()) return "仅方阵有逆矩阵";
                     if (Math.abs(A.determinant()) < 1e-10) return "矩阵奇异，无逆矩阵";
                     SimpleMatrix inv = A.invert();
                     return matrixToString(inv);
+
                 case "A^T":
                 case "Aᵀ":
                     return matrixToString(A.transpose());
+
                 case "Parse A from Text":
                 case "Parse B from Text":
                     return "请在文本框中输入矩阵后点击其他运算按钮";
+
                 default:
                     return "未知矩阵操作: " + operation;
             }
+        } catch (ArithmeticException e) {
+            return "算术错误: " + e.getMessage();
+        } catch (IllegalArgumentException e) {
+            return "参数错误: " + e.getMessage();
         } catch (Exception e) {
             return "矩阵运算错误: " + e.getMessage();
         }
@@ -856,5 +816,4 @@ public class CalculatorEngine {
     public void memoryStore(double value) { memory = value; }
     public double getMemory() { return memory; }
     public String getLastAnswer() { return lastAnswer; }
-
 }

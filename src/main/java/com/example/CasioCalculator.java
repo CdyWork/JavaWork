@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CasioCalculator - 增强版 UI
+ * CasioCalculator - UI
  *
  * 特性：
  *  - 动态矩阵输入：用户可指定行列数（NxM）生成 JTextField 网格；
@@ -78,27 +78,52 @@ public class CasioCalculator extends JFrame {
         setSize(1100, 820);
         setLocationRelativeTo(null);
 
-        JPanel main = new JPanel(new BorderLayout(12, 12));
+        JPanel main = new BackgroundPanel("src/main/resources/bj.jpg");
+        main.setLayout(new BorderLayout(12, 12));
         main.setBorder(new EmptyBorder(12, 12, 12, 12));
-        main.setBackground(new Color(36, 36, 36));
 
         main.add(createTopBar(), BorderLayout.NORTH);
         main.add(createDisplayPane(), BorderLayout.CENTER);
 
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setOpaque(false);
+        tabs.setBackground(new Color(0, 0, 0, 0));
+
         tabs.addTab("普通计算", createNormalPanel());
         tabs.addTab("矩阵运算 (动态大小)", createMatrixPanel());
         tabs.addTab("方程求解", createEquationPanel());
         tabs.addTab("函数绘图", createGraphPanel());
 
         main.add(tabs, BorderLayout.SOUTH);
-
         setContentPane(main);
+
+        // ✅ 粒子层设置
+        ParticlePanel particleLayer = new ParticlePanel();
+        particleLayer.setOpaque(false);
+        particleLayer.setParentFrame(this); // 传入父窗口引用
+        particleLayer.setLayout(null);
+        particleLayer.setBounds(0, 0, getWidth(), getHeight());
+
+        setGlassPane(particleLayer);
+        particleLayer.setVisible(true);
+
+        // ✅ 不再需要手动添加 MouseMotionListener，因为已经在 ParticlePanel 内部处理
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                particleLayer.setBounds(0, 0, getWidth(), getHeight());
+            }
+        });
     }
+
+
+
 
     private JPanel createTopBar() {
         JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(new Color(18, 80, 140));
+        p.setBackground(new Color(18, 80, 140, 180));  // 半透明蓝
+        p.setOpaque(true); // 保留颜色，但允许一定透明度
         p.setBorder(new EmptyBorder(8, 12, 8, 12));
 
         JLabel title = new JLabel("CDY Calculator");
@@ -115,21 +140,43 @@ public class CasioCalculator extends JFrame {
     }
 
     private JScrollPane createDisplayPane() {
-        display = new JTextArea(4, 60);
+        display = new JTextArea(4, 60) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                // 画微透明背景（你想要的效果）
+                g.setColor(new Color(255, 255, 255, 150));
+                g.fillRect(0, 0, getWidth(), getHeight());
+
+                // 再让 JTextArea 自己画文字和光标
+                super.paintComponent(g);
+            }
+        };
         display.setText("0");
         display.setEditable(true);
         display.setLineWrap(true);
         display.setWrapStyleWord(true);
         display.setMargin(new Insets(8, 12, 8, 12));
         display.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 20));
-        display.setBackground(new Color(230, 250, 230));
-        display.setForeground(new Color(10, 50, 10));
+
+        /* ======== 微透明效果（推荐） ======== */
+        display.setOpaque(false);  // 恢复可控背景绘制
+        display.setBackground(new Color(255, 255, 255, 150));  // 白色微透明
+        display.setForeground(new Color(20, 40, 20));          // 深绿色字体（更清晰）
 
         JScrollPane sp = new JScrollPane(display);
+
+        /* ScrollPane 也必须透明 */
+        sp.setOpaque(false);
+        sp.getViewport().setOpaque(false);
+
+        /* 原来的绿色边框保留 */
         sp.setBorder(new LineBorder(new Color(0, 120, 0), 4));
         sp.setPreferredSize(new Dimension(1000, 120));
+
         return sp;
     }
+
+
 
     /* ------------------ 普通计算面板 ------------------ */
     private JPanel createNormalPanel() {
@@ -444,7 +491,7 @@ public class CasioCalculator extends JFrame {
         equationsTextArea.setFont(new Font("Consolas", Font.PLAIN, 14));
         equationsTextArea.setLineWrap(true);
         equationsTextArea.setWrapStyleWord(true);
-        equationsTextArea.setText("例：\nx + 2y - z = 3;\n3x - y + 4z = 1;\n-2x + 5y + 2z = 7");
+        equationsTextArea.setText("x + 2y - z = 3;\n3x - y + 4z = 1;\n-2x + 5y + 2z = 7");
 
         inputPane.add(new JScrollPane(equationsTextArea), BorderLayout.CENTER);
 
@@ -653,15 +700,4 @@ public class CasioCalculator extends JFrame {
         );
     }
 
-    /* ------------------ 启动 ------------------ */
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {}
-            CasioCalculator app = new CasioCalculator();
-            app.setVisible(true);
-        });
-    }
 }

@@ -1,595 +1,678 @@
-# 卡西欧风格高级计算器 (Java 25)
+# Calculator by CDY
 
-[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://jdk.java.net/25/)
-[![Maven](https://img.shields.io/badge/Maven-3.9+-blue.svg)](https://maven.apache.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+一个功能强大的 Java Swing 多功能科学计算器，具有炫酷的赛博朋克粒子特效和全面的数学计算能力。
 
-一个功能完整的高级科学计算器，模仿卡西欧 fx-991CN X 计算器，使用 Java 25 和 Swing 实现。由于本人比较废物，代码可能有大量bug，也可能不适配，请见谅
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
 
-![Calculator Preview](https://via.placeholder.com/800x600/2d2d2d/ffffff?text=CASIO+fx-991CN+X)
+## ✨ 主要特性
 
----
+### 🎨 视觉效果
+- **赛博朋克粒子系统**：鼠标移动时生成动态粒子轨迹
+- **霓虹配色方案**：青色、洋红、粉红等赛博朋克风格配色
+- **粒子连线效果**：粒子间智能连线形成网格效果
+- **脉冲光环**：鼠标周围的动态脉冲圆环
+- **半透明 UI**：现代化的毛玻璃效果界面
+- **事件穿透**：粒子层不影响按钮点击操作
 
-## 📋 目录
+### 🧮 计算功能
 
-- [功能特性](#功能特性)
-- [技术栈](#技术栈)
-- [项目结构](#项目结构)
-- [安装指南](#安装指南)
-- [使用说明](#使用说明)
-- [开发文档](#开发文档)
-- [常见问题](#常见问题)
+#### 1. 普通计算器
+- **基础算术运算**：加、减、乘、除、取余
+- **科学函数**：
+  - 三角函数：sin, cos, tan
+  - 指数对数：ln, log, eˣ
+  - 幂运算：x², x³, xⁿ, √, ∛
+  - 其他：|x|, x!, 1/x, EXP
+- **内存功能**：MC, MR, M+, M-, MS
+- **ANS 答案回调**
+- **常数**：π, e
+- **实时显示**：支持直接编辑输入框
 
----
+#### 2. 矩阵运算（动态大小）
+- **动态矩阵生成**：支持自定义 N×M 矩阵大小（1×1 至 200×200）
+- **灵活输入方式**：
+  - 网格输入：直观的表格形式输入
+  - 文本粘贴：支持多行文本快速输入矩阵
+- **矩阵运算**：
+  - 加法：A + B
+  - 减法：A - B
+  - 乘法：A × B
+  - 行列式：det(A)
+  - 逆矩阵：A⁻¹
+  - 转置：Aᵀ
+- **智能解析**：自动识别逗号、空格分隔的矩阵数据
 
-## ✨ 功能特性
+#### 3. 方程求解
+- **线性方程组**：高斯消元法求解多元一次方程组
+  ```
+  示例：
+  x + 2y - z = 3
+  3x - y + 4z = 1
+  -2x + 5y + 2z = 7
+  ```
+- **非线性方程组**：牛顿-拉夫森法数值求解
+  ```
+  示例：
+  x^2 + y^2 = 25
+  x - y = 1
+  ```
+- **单变量方程**：二分法求根
+- **智能识别**：自动判断线性/非线性方程组类型
+- **多初始值策略**：提高复杂方程组的求解成功率
 
-### 1. 普通计算模式 🔢
-- **基本运算**: 加、减、乘、除、取余、幂运算
-- **科学函数**: 
-  - 三角函数: sin, cos, tan
-  - 对数函数: ln, log
-  - 指数函数: eˣ, xʸ, x², x³
-  - 根函数: √, ∛
-  - 其他: |x|, x!, 1/x
-- **特殊常数**: π (圆周率), e (自然对数底)
-- **内存功能**: MC (清除), MR (读取), M+ (加), M- (减), MS (存储)
-- **历史记录**: ANS 功能存储上次计算结果
+#### 4. 函数绘图
+- **基础函数**：sin, cos, tan, exp, log, sqrt, 幂函数等
+- **复合函数支持**：
+  - 嵌套函数：sin(cos(x)), log(abs(x))
+  - 四则运算：sin(x)*cos(x), x*exp(-x)
+  - 复杂表达式：(x²-1)/(x²+1), exp(-x²)
+- **交互式控制**：
+  - 自定义 X 轴范围和采样步长
+  - 快速预设：[-10,10], [-5,5], [0,20], [-π,π]
+  - 鼠标滚轮缩放
+- **自适应 Y 轴**：自动调整纵轴范围
+- **异常值处理**：智能跳过无效点（如 log(0), sqrt(-1)）
+- **内置帮助**：详细的函数格式说明和示例
 
-### 2. 矩阵运算模式 📊
-- **支持 3×3 矩阵**输入和计算
-- **矩阵运算**:
-  - 加法: A + B
-  - 减法: A - B
-  - 乘法: A × B
-  - 行列式: det(A), det(B)
-  - 逆矩阵: A⁻¹, B⁻¹
-  - 转置: Aᵀ, Bᵀ
-- **实时结果显示**
+## 🛠️ 技术栈
 
-### 3. 方程求解模式 🔍
-- **线性方程**: 2*x + 3 = 7
-- **二次方程**: x^2 - 4*x + 3 = 0
-- **三角方程**: sin(x) = 0.5
-- **数值求解**: 在 [-100, 100] 范围内搜索近似解
-- **精度**: 0.001 误差范围
+- **Java 8+**：核心编程语言
+- **Swing**：GUI 框架
+- **JFreeChart 1.5.3**：图表绘制
+- **exp4j 0.4.8**：数学表达式解析
+- **EJML 0.41**：线性代数运算库
 
-### 4. 函数绘图模式 📈
-- **函数可视化**: 输入任意数学函数绘制图形
-- **预设函数**: 
-  - 三角: sin(x), cos(x), tan(x)
-  - 多项式: x², x³
-  - 其他: sqrt(x), exp(x), log(x), abs(x)
-- **绘图范围**: x ∈ [-10, 10]
-- **交互式图表**: 基于 JFreeChart
+## 📦 依赖库
 
-### 5. 用户界面特性 🎨
-- **卡西欧风格设计**: 经典绿色 LCD 显示屏
-- **颜色编码按键**:
-  - 🔘 灰色: 数字键 (0-9, .)
-  - 🟠 橙色: 运算符 (+, -, ×, ÷)
-  - 🔵 蓝色: 科学函数
-  - 🔴 红色: 特殊功能 (AC, DEL)
-  - 🟢 绿色: 等号
-  - 🟣 紫色: 内存操作
-- **实时状态显示**: 角度模式、内存值
-- **响应式布局**: 适配不同屏幕尺寸
+### Maven 依赖
 
----
+```xml
+<dependencies>
+    <!-- JFreeChart - 图表库 -->
+    <dependency>
+        <groupId>org.jfree</groupId>
+        <artifactId>jfreechart</artifactId>
+        <version>1.5.3</version>
+    </dependency>
+    
+    <!-- exp4j - 表达式解析 -->
+    <dependency>
+        <groupId>net.objecthunter</groupId>
+        <artifactId>exp4j</artifactId>
+        <version>0.4.8</version>
+    </dependency>
+    
+    <!-- EJML - 矩阵运算 -->
+    <dependency>
+        <groupId>org.ejml</groupId>
+        <artifactId>ejml-simple</artifactId>
+        <version>0.41</version>
+    </dependency>
+</dependencies>
+```
 
-## 🛠 技术栈
+### pom.xml 完整配置
 
-### 核心技术
-- **Java 25**: 最新 JDK 特性
-- **Swing**: GUI 框架
-- **AWT**: 图形绘制
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-### 依赖库
-| 库名 | 版本 | 用途 |
-|------|------|------|
-| exp4j | 0.4.8 | 数学表达式解析和计算 |
-| EJML | 0.43.1 | 高效矩阵运算 |
-| JFreeChart | 1.5.4 | 函数图形绘制 |
-| Apache Commons Math3 | 3.6.1 | 数值计算和方程求解 |
+    <groupId>com.example</groupId>
+    <artifactId>calculator-cdy</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
 
-### 构建工具
-- **Maven 3.9+**: 依赖管理和项目构建
+    <name>Calculator by CDY</name>
+    <description>Advanced Scientific Calculator with Particle Effects</description>
 
----
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>net.objecthunter</groupId>
+            <artifactId>exp4j</artifactId>
+            <version>0.4.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ejml</groupId>
+            <artifactId>ejml-simple</artifactId>
+            <version>0.41</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.example.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+```
+
+## 🚀 快速开始
+
+### 系统要求
+- **JDK 8** 或更高版本
+- **Maven 3.6+**（用于依赖管理）
+- **内存**：建议 512MB 以上
+- **显示器分辨率**：建议 1280×720 以上
+
+### 方法一：使用 Maven 运行
+
+```bash
+# 1. 克隆或下载项目
+git clone <repository-url>
+cd calculator-cdy
+
+# 2. 编译项目
+mvn clean compile
+
+# 3. 运行程序
+mvn exec:java -Dexec.mainClass="com.example.Main"
+
+# 4. 或者打包成可执行 JAR
+mvn clean package
+java -jar target/calculator-cdy-1.0.0.jar
+```
+
+### 方法二：使用 IDE
+
+#### IntelliJ IDEA
+1. **File → Open** 选择项目文件夹
+2. 等待 Maven 自动导入依赖
+3. 右键 `Main.java` → **Run 'Main.main()'**
+
+#### Eclipse
+1. **File → Import → Maven → Existing Maven Projects**
+2. 选择项目文件夹
+3. 右键 `Main.java` → **Run As → Java Application**
+
+#### VS Code
+1. 安装 **Java Extension Pack** 和 **Maven for Java** 插件
+2. 打开项目文件夹
+3. 按 `F5` 或点击 `Main.java` 右上角的 **Run** 按钮
+
+### 方法三：命令行编译（不使用 Maven）
+
+```bash
+# 1. 手动下载依赖 JAR 文件并放入 lib/ 目录
+
+# 2. 编译
+javac -cp "lib/*" -d bin src/main/java/com/example/*.java
+
+# 3. 运行
+java -cp "bin:lib/*" com.example.Main
+```
+
+## 📖 使用指南
+
+### 普通计算
+1. 切换到 **"普通计算"** 选项卡
+2. 点击按钮输入表达式或直接在显示框输入
+3. 按 `=` 计算结果
+4. 使用 `ANS` 引用上次结果
+5. 使用 `DEL` 删除最后一个字符，`AC` 清空输入
+
+**示例表达式：**
+```
+sin(π/2)          → 1
+2^3 + sqrt(16)    → 12
+log(100)          → 2
+5!                → 120
+```
+
+### 矩阵运算
+
+#### 方式一：网格输入
+1. 切换到 **"矩阵运算 (动态大小)"** 选项卡
+2. 在"矩阵 A"或"矩阵 B"区域设置行列数（如 3×3）
+3. 点击 **"生成矩阵"** 按钮
+4. 在单元格中输入数值
+5. 选择运算类型（A+B, det(A), A⁻¹ 等）
+
+#### 方式二：文本输入
+1. 在文本框中粘贴矩阵数据
+   ```
+   1 2 3
+   4 5 6
+   7 8 9
+   ```
+   或使用逗号分隔：
+   ```
+   1, 2, 3
+   4, 5, 6
+   7, 8, 9
+   ```
+2. 点击运算按钮（如 **det(A)**）
+3. 系统会自动解析文本内容
+
+**支持的运算：**
+- `A + B` - 矩阵加法
+- `A - B` - 矩阵减法
+- `A * B` - 矩阵乘法
+- `det(A)` - 计算行列式
+- `A^-1` - 求逆矩阵
+- `A^T` - 转置矩阵
+
+### 方程求解
+
+#### 线性方程组
+```
+示例 1：三元一次方程组
+x + 2y - z = 3
+3x - y + 4z = 1
+-2x + 5y + 2z = 7
+
+示例 2：二元一次方程组
+2x + 3y = 13
+x - y = 1
+```
+
+#### 非线性方程组
+```
+示例 1：圆与直线交点
+x^2 + y^2 = 25
+x - y = 1
+
+示例 2：复杂非线性系统
+x^2 + y = 11
+x + y^2 = 7
+```
+
+#### 单变量方程
+```
+示例 1：多项式方程
+x^3 - 2*x^2 + x - 1 = 0
+
+示例 2：超越方程
+sin(x) = x/2
+```
+
+**操作步骤：**
+1. 切换到 **"方程求解"** 选项卡
+2. 在文本框中输入方程（每行一个或用分号分隔）
+3. 点击 **"求解"** 按钮
+4. 结果显示在主显示区域
+
+### 函数绘图
+
+#### 基础使用
+1. 切换到 **"函数绘图"** 选项卡
+2. 在输入框输入函数表达式（如 `sin(x)`）
+3. 或点击快捷按钮选择预设函数
+4. 点击 **"绘制图形"** 按钮
+
+#### 高级设置
+- 调整 **X 范围**：如 -10 到 10
+- 设置 **步长**：越小越精细（建议 0.01-0.1）
+- 使用 **快速设置** 按钮选择预设范围
+- 在绘图窗口点击 **"刷新图形"** 应用新设置
+
+#### 支持的函数
+
+**基础函数：**
+```
+sin(x), cos(x), tan(x)      - 三角函数
+exp(x), log(x), sqrt(x)     - 指数/对数/平方根
+x^2, x^3, x^n               - 幂函数
+abs(x), 1/x                 - 绝对值/倒数
+```
+
+**复合函数示例：**
+```
+sin(cos(x))                 - 嵌套三角函数
+exp(-x^2)                   - 高斯函数
+log(abs(x))                 - 对数绝对值
+sqrt(x^2+1)                 - 根式复合
+sin(x)*cos(x)               - 乘积函数
+x*exp(-x)                   - 指数衰减
+sin(x)/x                    - Sinc 函数
+(x^2-1)/(x^2+1)            - 有理函数
+```
+
+**点击"帮助"按钮查看更多示例！**
+
+## 🎯 核心算法详解
+
+### 1. 线性方程组求解
+**算法**：高斯消元法（Gaussian Elimination with Partial Pivoting）
+
+```
+步骤：
+1. 列主元选择（提高数值稳定性）
+2. 前向消元：将系数矩阵化为上三角矩阵
+3. 回代求解：从最后一行开始逐行求解
+```
+
+**时间复杂度**：O(n³)  
+**空间复杂度**：O(n²)
+
+### 2. 非线性方程组求解
+**算法**：牛顿-拉夫森迭代法（Newton-Raphson Method）
+
+```
+迭代公式：
+x[k+1] = x[k] - J(x[k])^(-1) * F(x[k])
+
+其中：
+- F(x) 是方程组向量
+- J(x) 是雅可比矩阵（数值计算）
+```
+
+**特性：**
+- 多初始值策略（8 组不同起点）
+- 回溯线搜索（Backtracking Line Search）
+- 发散检测（步长监控）
+- 残差验证（确保解的有效性）
+
+### 3. 单变量求根
+**算法**：二分法（Bisection Method）
+
+```
+原理：
+1. 在区间 [a, b] 搜索符号变化点
+2. 若 f(a) * f(b) < 0，则存在根
+3. 取中点 c = (a+b)/2，重复二分
+4. 迭代 60 次，精度达 10^(-10)
+```
+
+### 4. 矩阵运算
+使用 **EJML** (Efficient Java Matrix Library)：
+- 高效的矩阵乘法算法
+- 数值稳定的行列式计算
+- 基于 LU 分解的求逆算法
+- SVD/QR 分解（底层优化）
+
+## 🎨 界面设计
+
+### 配色方案
+| 元素 | 颜色代码 | 说明 |
+|------|---------|------|
+| 主背景 | `#242424` | 深灰色 |
+| 面板背景 | `#303030` / `#373737` | 炭黑色 |
+| 按钮 | `#505050` | 中灰色 |
+| 标题栏 | `rgba(18,80,140,180)` | 半透明蓝 |
+| 显示框 | `rgba(255,255,255,150)` | 半透明白 |
+| 粒子青色 | `#00FFFF` | 霓虹青 |
+| 粒子洋红 | `#FF00FF` | 霓虹紫 |
+| 粒子粉红 | `#FF1493` | 深粉红 |
+
+### 粒子系统参数
+```java
+粒子生成速率: 8 个/帧 (60 FPS)
+粒子寿命: 20-45 帧随机
+粒子速度: ±6 像素/帧
+引力强度: 0.4
+阻尼系数: 0.9
+连线距离阈值: 80 像素
+脉冲频率: 200ms / 80ms
+最大粒子数: 400
+```
 
 ## 📁 项目结构
 
 ```
-casio-calculator/
-├── pom.xml                                 # Maven 配置文件
-├── README.md                               # 项目说明文档
-├── LICENSE                                 # 许可证
+calculator-cdy/
 ├── src/
-│   └── main/
-│       ├── java/
-│       │   └── com/
-│       │       └── calculator/
-│       │           ├── CasioCalculator.java      # 主程序和 GUI
-│       │           ├── CalculatorEngine.java     # 计算引擎
-│       │           ├── MatrixCalculator.java     # 矩阵运算
-│       │           └── GraphPlotter.java         # 图形绘制
-│       └── resources/
-│           └── icon.png                    # 应用图标（可选）
-├── target/                                 # 编译输出目录
-│   └── casio-calculator-1.0.0.jar         # 可执行 JAR
-└── docs/                                   # 文档目录
-    ├── screenshots/                        # 截图
-    └── user-manual.md                      # 用户手册
+│   ├── main/
+│   │   ├── java/com/example/
+│   │   │   ├── Main.java                    # 程序入口
+│   │   │   ├── CasioCalculator.java         # 主界面控制器
+│   │   │   ├── CalculatorEngine.java        # 计算引擎
+│   │   │   │   ├── LinearSolver             # 线性方程组求解器
+│   │   │   │   └── NonlinearSolver          # 非线性方程组求解器
+│   │   │   ├── GraphPlotter.java            # 函数绘图窗口
+│   │   │   ├── ParticlePanel.java           # 粒子特效系统
+│   │   │   └── BackgroundPanel.java         # 背景面板
+│   │   └── resources/
+│   │       └── bj.jpg                        # 背景图片（可选）
+├── pom.xml                                   # Maven 配置
+├── README.md                                 # 本文件
+└── LICENSE                                   # 许可证
 ```
 
 ### 核心类说明
 
-#### 1. `CasioCalculator.java` (主类)
-- **职责**: GUI 界面、事件处理、用户交互
-- **主要方法**:
-  - `initializeUI()`: 初始化用户界面
-  - `createNormalPanel()`: 创建普通计算面板
-  - `createMatrixPanel()`: 创建矩阵运算面板
-  - `createEquationPanel()`: 创建方程求解面板
-  - `createGraphPanel()`: 创建绘图面板
-  - `handleButtonClick(String)`: 处理按钮点击事件
-
-#### 2. `CalculatorEngine.java` (计算引擎)
-- **职责**: 表达式计算、方程求解、内存管理
-- **主要方法**:
-  - `calculate(String)`: 计算数学表达式
-  - `solveEquation(String)`: 求解方程
-  - `preprocessExpression(String)`: 预处理表达式
-  - `memoryAdd/Clear/Recall/Store()`: 内存操作
-
-#### 3. `MatrixCalculator.java` (矩阵计算器)
-- **职责**: 矩阵运算
-- **主要方法**:
-  - `performOperation(String, double[][], double[][])`: 执行矩阵运算
-  - `matrixToString(SimpleMatrix)`: 矩阵转字符串
-
-#### 4. `GraphPlotter.java` (图形绘制器)
-- **职责**: 函数图形可视化
-- **主要方法**:
-  - 构造函数: 创建并显示函数图形窗口
-
----
-
-## 🚀 安装指南
-
-### 前置要求
-
-1. **JDK 25** (必需)
-2. **Maven 3.9+** (推荐) 或 Gradle
-3. **Git** (可选，用于克隆项目)
-
-### 方法一: 使用 Maven (推荐)
-
-#### Step 1: 安装 JDK 25
-
-```bash
-# macOS (使用 Homebrew)
-brew install openjdk@25
-
-# Linux (Ubuntu/Debian)
-wget https://download.java.net/java/GA/jdk25/...
-sudo tar -xzf openjdk-25_linux-x64_bin.tar.gz -C /opt/
-export JAVA_HOME=/opt/jdk-25
-export PATH=$JAVA_HOME/bin:$PATH
-
-# Windows
-# 从 https://jdk.java.net/25/ 下载安装包
-# 安装后配置环境变量 JAVA_HOME 和 PATH
-```
-
-验证安装：
-```bash
-java --version
-# 输出应显示: openjdk 25...
-```
-
-#### Step 2: 安装 Maven
-
-```bash
-# macOS
-brew install maven
-
-# Linux
-sudo apt install maven
-
-# Windows (使用 Chocolatey)
-choco install maven
-```
-
-验证安装：
-```bash
-mvn --version
-# 输出应显示: Apache Maven 3.9.x
-```
-
-#### Step 3: 克隆或创建项目
-
-```bash
-# 克隆项目（如果使用 Git）
-git clone https://github.com/yourusername/casio-calculator.git
-cd casio-calculator
-
-# 或手动创建目录结构
-mkdir casio-calculator
-cd casio-calculator
-mkdir -p src/main/java/com/calculator
-```
-
-#### Step 4: 复制源代码
-
-将以下文件放入对应位置：
-- `pom.xml` → 项目根目录
-- `*.java` 文件 → `src/main/java/com/calculator/`
-
-#### Step 5: 构建项目
-
-```bash
-# 下载依赖并编译
-mvn clean install
-
-# 或仅编译
-mvn compile
-```
-
-#### Step 6: 运行程序
-
-```bash
-# 方式 1: 使用 Maven exec 插件
-mvn exec:java -Dexec.mainClass="com.calculator.CasioCalculator"
-
-# 方式 2: 运行打包的 JAR
-java -jar target/casio-calculator-1.0.0.jar
-```
-
-### 方法二: 使用 IDE (IntelliJ IDEA / Eclipse)
-
-#### IntelliJ IDEA
-
-1. **File** → **Open** → 选择项目根目录
-2. IDEA 会自动识别 Maven 项目并下载依赖
-3. 等待索引完成
-4. 右键点击 `CasioCalculator.java` → **Run 'CasioCalculator.main()'**
-
-#### Eclipse
-
-1. **File** → **Import** → **Maven** → **Existing Maven Projects**
-2. 选择项目根目录
-3. 等待依赖下载完成
-4. 右键点击 `CasioCalculator.java` → **Run As** → **Java Application**
-
-### 方法三: 手动编译 (不推荐)
-
-```bash
-# 下载依赖 JAR 文件到 lib/ 目录
-mkdir lib
-cd lib
-# 下载: exp4j-0.4.8.jar, ejml-all-0.43.1.jar, jfreechart-1.5.4.jar, commons-math3-3.6.1.jar
-
-# 编译
-cd ..
-javac --release 25 -cp "lib/*" -d bin src/main/java/com/calculator/*.java
-
-# 运行
-java -cp "bin:lib/*" com.calculator.CasioCalculator
-```
-
----
-
-## 📖 使用说明
-
-### 快速开始
-
-1. **启动程序**后，默认进入"普通计算"模式
-2. 绿色 LCD 显示屏显示当前输入
-3. 使用鼠标点击按键输入表达式
-4. 按 **=** 键计算结果
-
-### 普通计算模式
-
-#### 基本运算
-```
-示例 1: 加法
-输入: 123 + 456
-结果: 579
-
-示例 2: 乘方
-输入: 2 ^ 10
-结果: 1024
-
-示例 3: 混合运算
-输入: (3 + 5) * 2 - 10 / 2
-结果: 11
-```
-
-#### 科学函数
-```
-示例 1: 正弦
-输入: sin(30)
-结果: 0.5 (DEG 模式)
-
-示例 2: 对数
-输入: ln(e)
-结果: 1
-
-示例 3: 平方根
-输入: √(144)
-结果: 12
-```
-
-#### 内存操作
-```
-1. 输入 100, 按 MS (存储)
-2. 输入 50, 按 M+ (加到内存)
-3. 按 MR (读取内存) → 显示 150
-4. 按 MC (清除内存)
-```
-
-### 矩阵运算模式
-
-1. 切换到"矩阵运算"选项卡
-2. 在"矩阵 A"和"矩阵 B"输入框中输入数值
-3. 点击运算按钮（如 A + B）
-4. 结果显示在主显示屏
-
-#### 示例：矩阵乘法
-```
-矩阵 A:          矩阵 B:
-[1  2  3]        [1  0  0]
-[4  5  6]   ×    [0  1  0]
-[7  8  9]        [0  0  1]
-
-结果: A × B = A (单位矩阵)
-```
-
-### 方程求解模式
-
-1. 切换到"方程求解"选项卡
-2. 输入方程（包含等号）
-3. 点击"求解方程"按钮
-
-#### 支持的方程类型
-```
-线性方程: 2*x + 3 = 7        → x = 2
-二次方程: x^2 - 4 = 0        → x ≈ 2 或 x ≈ -2
-三角方程: sin(x) = 0.5       → x ≈ 30° (DEG)
-```
-
-### 函数绘图模式
-
-1. 切换到"函数绘图"选项卡
-2. 输入函数表达式（使用 x 作为变量）
-3. 点击"绘制图形"或选择预设函数
-4. 新窗口显示函数图像
-
-#### 函数示例
-```
-sin(x)           - 正弦波
-x^2              - 抛物线
-exp(x)           - 指数增长
-log(x)           - 对数曲线
-abs(x)           - V 型图
-x^3 - 3*x        - 三次函数
-```
-
----
-
-## 🔧 开发文档
-
-### 添加新功能
-
-#### 1. 添加新按钮
-
-在 `CasioCalculator.java` 中：
-
-```java
-// 在 createNormalPanel() 方法中
-String[][] newButtons = {
-    {"新功能1", "新功能2", ...}
-};
-
-for (String[] row : newButtons) {
-    for (String text : row) {
-        buttonsPanel.add(createStyledButton(text, ButtonType.FUNCTION));
-    }
-}
-```
-
-#### 2. 添加新计算功能
-
-在 `CalculatorEngine.java` 中：
-
-```java
-public String newFunction(String input) throws Exception {
-    // 实现计算逻辑
-    double result = ...;
-    return formatResult(result);
-}
-```
-
-#### 3. 添加新数学函数
-
-在 `preprocessExpression()` 中注册：
-
-```java
-private String preprocessExpression(String expr) {
-    expr = expr.replace("你的函数", "对应的exp4j函数");
-    return expr;
-}
-```
-
-### 自定义样式
-
-修改按钮颜色：
-
-```java
-Color bgColor;
-if (type == ButtonType.YOUR_TYPE) {
-    bgColor = new Color(R, G, B); // RGB 值
-}
-```
-
-修改显示屏颜色：
-
-```java
-display.setBackground(new Color(R, G, B));
-display.setForeground(new Color(R, G, B));
-```
-
-### 扩展矩阵维度
-
-在 `CasioCalculator.java` 中：
-
-```java
-// 修改矩阵大小
-private JTextField[][] matrixAFields = new JTextField[N][N]; // N为新维度
-
-// 在 createMatrixInput() 中更新循环
-for (int i = 0; i < N; i++) {
-    for (int j = 0; j < N; j++) {
-        // ...
-    }
-}
-```
-
-### 调试技巧
-
-#### 启用详细日志
-
-```java
-// 在 handleButtonClick() 中添加
-System.out.println("Button clicked: " + text);
-System.out.println("Current display: " + display.getText());
-```
-
-#### 捕获异常
-
-```java
-try {
-    // 你的代码
-} catch (Exception e) {
-    e.printStackTrace(); // 打印堆栈跟踪
-    display.setText("错误: " + e.getMessage());
-}
-```
-
----
-
-## ❓ 常见问题
-
-### Q1: 运行时报错 "找不到主类"
-**A**: 确保：
-1. Maven 编译成功: `mvn clean install`
-2. 主类路径正确: `com.calculator.CasioCalculator`
-3. 使用正确的 JDK 版本
-
-### Q2: Maven 下载依赖失败
-**A**: 尝试：
-```bash
-# 清理缓存
-mvn clean
-
-# 强制更新依赖
-mvn clean install -U
-
-# 使用国内镜像（在 settings.xml 中配置阿里云镜像）
-<mirror>
-    <id>aliyun</id>
-    <url>https://maven.aliyun.com/repository/public</url>
-    <mirrorOf>central</mirrorOf>
-</mirror>
-```
-
-### Q3: 矩阵运算报错 "矩阵奇异"
-**A**: 矩阵行列式为 0，不可逆。检查输入矩阵是否线性相关。
-
-### Q4: 方程求解找不到解
-**A**: 
-1. 确保方程有实数解
-2. 解可能超出搜索范围 [-100, 100]
-3. 尝试调整搜索步长或范围
-
-### Q5: 图形绘制窗口空白
-**A**: 
-1. 检查函数语法是否正确
-2. 函数值可能超出显示范围
-3. 确保使用 `x` 作为变量
-
-### Q6: 在 macOS 上界面显示异常
-**A**: 
-```java
-// 在 main() 方法开始添加
-System.setProperty("apple.laf.useScreenMenuBar", "true");
-System.setProperty("apple.awt.application.name", "CASIO Calculator");
-```
-
-### Q7: 如何打包为独立可执行文件？
-**A**: 
-```bash
-# 使用 Maven Shade 插件打包
-mvn clean package
-
-# 生成的 JAR 位于 target/ 目录
-java -jar target/casio-calculator-1.0.0.jar
-
-# 或使用 jpackage (Java 14+)
-jpackage --input target --name CasioCalculator \
-         --main-jar casio-calculator-1.0.0.jar \
-         --main-class com.calculator.CasioCalculator
-```
-
----
+#### Main.java
+- 程序启动入口
+- 设置系统外观（Look and Feel）
+- 初始化主窗口
+
+#### CasioCalculator.java
+- 主界面控制器
+- 管理所有选项卡和面板
+- 处理用户交互事件
+- 协调各模块工作
+
+#### CalculatorEngine.java
+- 核心计算引擎
+- 表达式解析和求值
+- 方程组求解（线性/非线性）
+- 矩阵运算封装
+
+#### GraphPlotter.java
+- 函数绘图窗口
+- 基于 JFreeChart 实现
+- 支持复合函数解析
+- 自适应坐标轴
+
+#### ParticlePanel.java
+- 粒子特效系统
+- 鼠标轨迹追踪
+- 粒子物理模拟
+- 事件穿透处理
+
+## 🐛 已知问题与修复记录
+
+### ✅ 已修复问题
+
+| 问题 | 原因 | 解决方案 | 版本 |
+|------|------|---------|------|
+| 线性方程组误判为非线性 | 正则表达式过于严格 | 改进线性特征检测逻辑 | v1.0 |
+| switch 无 break 警告 | 每个 case 末尾缺少 break | 改为 return 语句 | v1.0 |
+| 非线性求解易发散 | 缺少步长监控 | 添加发散检测机制 | v1.0 |
+| 矩阵奇异性误判 | 行列式阈值设置不当 | 调整为 1e-12 | v1.0 |
+| 粒子层阻挡按钮点击 | GlassPane 拦截事件 | 实现事件穿透 | v1.0 |
+| 中文显示乱码 | 字体配置问题 | 设置 Microsoft YaHei UI | v1.0 |
+
+### ⚠️ 已知限制
+
+1. **非线性方程组**：
+   - 对初始值敏感，部分复杂系统可能无解
+   - 解决方案：尝试调整方程形式或提供更好的初始猜测
+
+2. **矩阵大小**：
+   - 理论支持 200×200，但大矩阵计算较慢
+   - 建议：50×50 以下性能最佳
+
+3. **函数绘图**：
+   - 间断点可能显示连线（如 tan(x)）
+   - 解决方案：手动调整 X 范围避开间断点
+
+## 🔮 未来计划
+
+### 短期目标 (v1.1)
+- [ ] 复数运算支持
+- [ ] 计算历史记录
+- [ ] 导出结果为 PDF/图片
+- [ ] 多语言支持（中/英）
+
+### 中期目标 (v1.2)
+- [ ] 积分/微分数值计算
+- [ ] 统计函数（均值、方差、回归分析）
+- [ ] 向量运算（点积、叉积、范数）
+- [ ] 单位转换器
+
+### 长期目标 (v2.0)
+- [ ] 符号计算（SymPy 集成）
+- [ ] 3D 函数绘图
+- [ ] 编程模式（二进制、十六进制）
+- [ ] 插件系统
+- [ ] 云同步计算历史
 
 ## 🤝 贡献指南
 
 欢迎贡献代码！请遵循以下步骤：
 
-1. Fork 本项目
-2. 创建特性分支: `git checkout -b feature/新功能`
-3. 提交更改: `git commit -m '添加新功能'`
-4. 推送到分支: `git push origin feature/新功能`
-5. 提交 Pull Request
+1. **Fork** 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 **Pull Request**
 
 ### 代码规范
-- 使用 4 空格缩进
-- 遵循 Java 命名约定
-- 添加必要的注释
-- 编写单元测试
-
----
+- 使用 Java 8 语法
+- 遵循驼峰命名法
+- 添加必要的注释（中文或英文）
+- 确保代码通过编译且无警告
 
 ## 📄 许可证
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
+本项目采用 **MIT License** 开源协议。
 
----
+```
+MIT License
 
-## 👥 作者
+Copyright (c) 2024 CDY (Chen DongYang)
 
-- **开发者**: DY C
-- **邮箱**: 3634043412@qq.com
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
----
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## 👨‍💻 作者
+
+**CDY (Chen DongYang)**
+
+- 🎓 专业：计算机科学与技术
+- 💼 方向：Java 应用开发、科学计算
+- 📧 Email: [your-email@example.com]
+- 🔗 GitHub: [github.com/your-username]
 
 ## 🙏 致谢
 
-- [exp4j](https://www.objecthunter.net/exp4j/) - 表达式解析库
-- [EJML](http://ejml.org/) - 矩阵运算库
-- [JFreeChart](https://www.jfree.org/jfreechart/) - 图表绘制库
-- [Apache Commons Math](https://commons.apache.org/proper/commons-math/) - 数学工具库
+特别感谢以下开源项目：
+
+- **[JFreeChart](https://www.jfree.org/jfreechart/)** - 提供强大的图表绘制功能
+- **[exp4j](https://www.objecthunter.net/exp4j/)** - 简洁高效的表达式解析引擎
+- **[EJML](http://ejml.org/)** - 高性能的 Java 矩阵运算库
+- **[Oracle Java](https://www.oracle.com/java/)** - Java 开发平台
 
 ---
 
-## 📚 相关资源
+## 📸 截图预览
 
-- [Java 25 文档](https://docs.oracle.com/en/java/javase/25/)
-- [Swing 教程](https://docs.oracle.com/javase/tutorial/uiswing/)
-- [Maven 指南](https://maven.apache.org/guides/)
+### 主界面
+![主界面](screenshots/main.png)
+*赛博朋克风格的主界面，带有动态粒子效果*
+
+### 普通计算
+![普通计算](screenshots/calculator.png)
+*科学计算器功能*
+
+### 矩阵运算
+![矩阵运算](screenshots/matrix.png)
+*动态大小矩阵运算*
+
+### 方程求解
+![方程求解](screenshots/equation.png)
+*多元方程组求解*
+
+### 函数绘图
+![函数绘图](screenshots/graph.png)
+*复合函数绘图*
 
 ---
 
-**如有问题或建议，欢迎提交 Issue！** 🎉
+## ❓ 常见问题 (FAQ)
+
+**Q1: 程序启动后显示乱码怎么办？**  
+A: 确保系统已安装 Microsoft YaHei UI 字体，或修改代码中的字体设置。
+
+**Q2: 背景图片不显示？**  
+A: 检查 `src/main/resources/bj.jpg` 是否存在。如果不存在，程序会显示纯色背景。
+
+**Q3: 非线性方程组求解失败？**  
+A: 尝试简化方程或调整初始值，复杂系统可能需要符号计算软件（如 Mathematica）。
+
+**Q4: 矩阵运算结果不准确？**  
+A: 大矩阵可能存在数值误差，建议使用专业软件（如 MATLAB）验证。
+
+**Q5: 如何添加自定义函数？**  
+A: 修改 `GraphPlotter.java` 中的 `preprocessFunction()` 方法，添加自定义函数映射。
+
+---
+
+## 📞 支持与反馈
+
+如果你遇到问题或有建议：
+
+1. 查看 **FAQ** 部分
+2. 搜索 [Issues](https://github.com/your-repo/issues) 是否有类似问题
+3. 创建新的 Issue 并详细描述问题
+4. 发送邮件至：[your-email@example.com]
+
+**喜欢这个项目？别忘了给个 ⭐ Star！**
+
+---
+
+## 📊 项目统计
+
+![GitHub stars](https://img.shields.io/github/stars/your-username/calculator-cdy?style=social)
+![GitHub forks](https://img.shields.io/github/forks/your-username/calculator-cdy?style=social)
+![GitHub issues](https://img.shields.io/github/issues/your-username/calculator-cdy)
+![GitHub last commit](https://img.shields.io/github/last-commit/your-username/calculator-cdy)
+
+---
+
+**最后更新时间**：2024-11-27  
+**版本**：v1.0.0  
+**状态**：✅ 稳定版本
