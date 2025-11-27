@@ -658,7 +658,7 @@ A: 修改 `GraphPlotter.java` 中的 `preprocessFunction()` 方法，添加自�
 1. 查看 **FAQ** 部分
 2. 搜索 [Issues](https://github.com/your-repo/issues) 是否有类似问题
 3. 创建新的 Issue 并详细描述问题
-4. 发送邮件至：[your-email@example.com]
+4. 发送邮件至：[3634043412@qq.com]
 
 **喜欢这个项目？别忘了给个 ⭐ Star！**
 
