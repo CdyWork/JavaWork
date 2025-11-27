@@ -594,8 +594,8 @@ SOFTWARE.
 
 - 🎓 专业：计算机科学与技术
 - 💼 方向：Java 应用开发、科学计算
-- 📧 Email: [your-email@example.com]
-- 🔗 GitHub: [github.com/your-username]
+- 📧 Email: [3634043412@qq.com]
+- 🔗 GitHub: [github.com/CdyWork]
 
 ## 🙏 致谢
 
